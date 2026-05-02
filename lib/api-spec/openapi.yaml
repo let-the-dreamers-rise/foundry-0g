@@ -1,22 +1,33 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Foundry - Decentralized AI Model Fine-Tuning Marketplace API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: fine-tune
+    description: Fine-tuning job operations
+  - name: models
+    description: Model marketplace operations
+  - name: licenses
+    description: License and access operations
+  - name: inference
+    description: Model inference operations
+  - name: activity
+    description: Platform activity feed
+  - name: stats
+    description: Platform statistics
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +35,311 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /fine-tune:
+    get:
+      operationId: listFineTuneJobs
+      tags: [fine-tune]
+      summary: List fine-tuning jobs
+      parameters:
+        - name: creatorWallet
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of fine-tuning jobs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FineTuneJob"
+    post:
+      operationId: createFineTuneJob
+      tags: [fine-tune]
+      summary: Submit a fine-tuning job
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateFineTuneJobBody"
+      responses:
+        "201":
+          description: Job created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FineTuneJob"
+        "400":
+          description: Invalid input
+
+  /fine-tune/{id}:
+    get:
+      operationId: getFineTuneJob
+      tags: [fine-tune]
+      summary: Get a fine-tuning job by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Fine-tuning job
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FineTuneJob"
+        "404":
+          description: Not found
+
+  /fine-tune/{id}/status:
+    get:
+      operationId: getFineTuneJobStatus
+      tags: [fine-tune]
+      summary: Get live status of a fine-tuning job
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Job status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FineTuneJobStatus"
+
+  /models:
+    get:
+      operationId: listModels
+      tags: [models]
+      summary: List all marketplace models
+      parameters:
+        - name: baseModel
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: sort
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [popular, newest, cheapest]
+        - name: creatorWallet
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of models
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Model"
+
+  /models/{id}:
+    get:
+      operationId: getModel
+      tags: [models]
+      summary: Get model details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Model details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Model"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateModel
+      tags: [models]
+      summary: Update model listing
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateModelBody"
+      responses:
+        "200":
+          description: Updated model
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Model"
+
+  /models/{id}/list:
+    post:
+      operationId: listModel
+      tags: [models]
+      summary: List a model on the marketplace
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ListModelBody"
+      responses:
+        "200":
+          description: Model listed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Model"
+
+  /models/{id}/infer:
+    post:
+      operationId: inferModel
+      tags: [inference]
+      summary: Run inference on a licensed model
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InferModelBody"
+      responses:
+        "200":
+          description: Inference result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InferModelResponse"
+        "403":
+          description: No active license
+
+  /licenses:
+    get:
+      operationId: listLicenses
+      tags: [licenses]
+      summary: List licenses for a buyer wallet
+      parameters:
+        - name: buyerWallet
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Licenses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/License"
+    post:
+      operationId: purchaseLicense
+      tags: [licenses]
+      summary: Purchase a model license
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PurchaseLicenseBody"
+      responses:
+        "201":
+          description: License purchased
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/License"
+
+  /activity:
+    get:
+      operationId: getActivity
+      tags: [activity]
+      summary: Get platform-wide activity feed
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Activity events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityEvent"
+
+  /stats:
+    get:
+      operationId: getPlatformStats
+      tags: [stats]
+      summary: Get platform statistics
+      responses:
+        "200":
+          description: Platform stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlatformStats"
+
+  /stats/creator:
+    get:
+      operationId: getCreatorStats
+      tags: [stats]
+      summary: Get creator dashboard stats
+      parameters:
+        - name: creatorWallet
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Creator stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreatorStats"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +350,365 @@ components:
       required:
         - status
 
+    FineTuneJob:
+      type: object
+      properties:
+        id:
+          type: integer
+        creatorWallet:
+          type: string
+        jobIdOn0g:
+          type: ["string", "null"]
+        datasetRootHash:
+          type: ["string", "null"]
+        datasetOgTxHash:
+          type: ["string", "null"]
+        datasetOgExplorerUrl:
+          type: ["string", "null"]
+        baseModel:
+          type: string
+        modelName:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        status:
+          type: string
+          enum: [pending, uploading, training, completed, failed]
+        progressPct:
+          type: ["integer", "null"]
+        modelRootHash:
+          type: ["string", "null"]
+        modelOgExplorerUrl:
+          type: ["string", "null"]
+        nftTokenId:
+          type: ["string", "null"]
+        nftOgChainTxHash:
+          type: ["string", "null"]
+        nftOgExplorerUrl:
+          type: ["string", "null"]
+        errorMessage:
+          type: ["string", "null"]
+        startedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: ["string", "null"]
+      required:
+        - id
+        - creatorWallet
+        - baseModel
+        - modelName
+        - description
+        - category
+        - status
+        - startedAt
+
+    FineTuneJobStatus:
+      type: object
+      properties:
+        id:
+          type: integer
+        status:
+          type: string
+        progressPct:
+          type: ["integer", "null"]
+        jobIdOn0g:
+          type: ["string", "null"]
+        modelRootHash:
+          type: ["string", "null"]
+        modelOgExplorerUrl:
+          type: ["string", "null"]
+        nftTokenId:
+          type: ["string", "null"]
+      required:
+        - id
+        - status
+
+    CreateFineTuneJobBody:
+      type: object
+      properties:
+        creatorWallet:
+          type: string
+        baseModel:
+          type: string
+          enum: [Qwen2.5-0.5B-Instruct, Qwen3-32B]
+        modelName:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+          enum: [customer-support, creative-writing, code-assistant, finance, medical, legal, other]
+        datasetDescription:
+          type: string
+        samplePrompt:
+          type: string
+        sampleOutput:
+          type: string
+        licensePriceUsd:
+          type: number
+        datasetContent:
+          type: string
+          description: JSONL content of the training dataset
+      required:
+        - creatorWallet
+        - baseModel
+        - modelName
+        - description
+        - category
+        - datasetDescription
+        - samplePrompt
+        - sampleOutput
+        - licensePriceUsd
+        - datasetContent
+
+    Model:
+      type: object
+      properties:
+        id:
+          type: integer
+        jobId:
+          type: ["integer", "null"]
+        nftTokenId:
+          type: ["string", "null"]
+        ogChainTxHash:
+          type: ["string", "null"]
+        ogExplorerUrl:
+          type: ["string", "null"]
+        creatorWallet:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        baseModel:
+          type: string
+        datasetDescription:
+          type: string
+        samplePrompt:
+          type: string
+        sampleOutput:
+          type: string
+        licensePriceUsd:
+          type: number
+        isListed:
+          type: boolean
+        inferenceCount:
+          type: integer
+        licenseCount:
+          type: integer
+        modelRootHash:
+          type: ["string", "null"]
+        datasetRootHash:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - creatorWallet
+        - name
+        - description
+        - category
+        - baseModel
+        - datasetDescription
+        - samplePrompt
+        - sampleOutput
+        - licensePriceUsd
+        - isListed
+        - inferenceCount
+        - licenseCount
+        - createdAt
+
+    UpdateModelBody:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        licensePriceUsd:
+          type: number
+        isListed:
+          type: boolean
+        samplePrompt:
+          type: string
+        sampleOutput:
+          type: string
+
+    ListModelBody:
+      type: object
+      properties:
+        licensePriceUsd:
+          type: number
+        creatorWallet:
+          type: string
+      required:
+        - licensePriceUsd
+        - creatorWallet
+
+    License:
+      type: object
+      properties:
+        id:
+          type: integer
+        modelId:
+          type: integer
+        buyerWallet:
+          type: string
+        ogPaymentTxHash:
+          type: ["string", "null"]
+        ogExplorerUrl:
+          type: ["string", "null"]
+        activeUntil:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        model:
+          $ref: "#/components/schemas/Model"
+      required:
+        - id
+        - modelId
+        - buyerWallet
+        - activeUntil
+        - createdAt
+        - model
+
+    PurchaseLicenseBody:
+      type: object
+      properties:
+        modelId:
+          type: integer
+        buyerWallet:
+          type: string
+        durationDays:
+          type: integer
+      required:
+        - modelId
+        - buyerWallet
+        - durationDays
+
+    InferModelBody:
+      type: object
+      properties:
+        prompt:
+          type: string
+        callerWallet:
+          type: string
+        systemPrompt:
+          type: string
+      required:
+        - prompt
+        - callerWallet
+
+    InferModelResponse:
+      type: object
+      properties:
+        modelId:
+          type: integer
+        response:
+          type: string
+        teeProvider:
+          type: ["string", "null"]
+        teeAttestationRef:
+          type: ["string", "null"]
+        processingMs:
+          type: integer
+        calledAt:
+          type: string
+          format: date-time
+      required:
+        - modelId
+        - response
+        - processingMs
+        - calledAt
+
+    ActivityEvent:
+      type: object
+      properties:
+        id:
+          type: integer
+        eventType:
+          type: string
+          enum: [model_trained, model_listed, license_purchased, inference_run, job_started]
+        modelId:
+          type: ["integer", "null"]
+        modelName:
+          type: ["string", "null"]
+        actorWallet:
+          type: ["string", "null"]
+        ogExplorerUrl:
+          type: ["string", "null"]
+        metadata:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - eventType
+        - createdAt
+
+    PlatformStats:
+      type: object
+      properties:
+        totalModels:
+          type: integer
+        totalFineTuneJobs:
+          type: integer
+        totalInferenceCalls:
+          type: integer
+        totalLicenses:
+          type: integer
+        totalDatasetStorageGb:
+          type: number
+        featuredModels:
+          type: array
+          items:
+            $ref: "#/components/schemas/Model"
+      required:
+        - totalModels
+        - totalFineTuneJobs
+        - totalInferenceCalls
+        - totalLicenses
+        - totalDatasetStorageGb
+        - featuredModels
+
+    CreatorStats:
+      type: object
+      properties:
+        totalJobs:
+          type: integer
+        completedJobs:
+          type: integer
+        listedModels:
+          type: integer
+        totalLicenses:
+          type: integer
+        totalInferenceCalls:
+          type: integer
+        estimatedEarningsUsd:
+          type: number
+        jobs:
+          type: array
+          items:
+            $ref: "#/components/schemas/FineTuneJob"
+        models:
+          type: array
+          items:
+            $ref: "#/components/schemas/Model"
+      required:
+        - totalJobs
+        - completedJobs
+        - listedModels
+        - totalLicenses
+        - totalInferenceCalls
+        - estimatedEarningsUsd
+        - jobs
+        - models

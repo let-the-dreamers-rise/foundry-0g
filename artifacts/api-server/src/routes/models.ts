@@ -1,0 +1,122 @@
+import { Router, type IRouter } from "express";
+import { eq, desc, asc } from "drizzle-orm";
+import { db, modelsTable, activityTable } from "@workspace/db";
+import {
+  GetModelParams,
+  GetModelResponse,
+  UpdateModelParams,
+  UpdateModelBody,
+  UpdateModelResponse,
+  ListModelParams,
+  ListModelBody,
+  ListModelResponse,
+  ListModelsQueryParams,
+  ListModelsResponse,
+} from "@workspace/api-zod";
+
+const router: IRouter = Router();
+
+router.get("/models", async (req, res): Promise<void> => {
+  const query = ListModelsQueryParams.safeParse(req.query);
+
+  let rows = await db
+    .select()
+    .from(modelsTable)
+    .orderBy(desc(modelsTable.createdAt));
+
+  if (query.success) {
+    const { baseModel, category, creatorWallet, sort } = query.data;
+    if (baseModel) rows = rows.filter((m) => m.baseModel === baseModel);
+    if (category) rows = rows.filter((m) => m.category === category);
+    if (creatorWallet) rows = rows.filter((m) => m.creatorWallet === creatorWallet);
+    if (sort === "popular") rows = rows.sort((a, b) => b.inferenceCount - a.inferenceCount);
+    else if (sort === "cheapest") rows = rows.sort((a, b) => a.licensePriceUsd - b.licensePriceUsd);
+  }
+
+  res.json(ListModelsResponse.parse(rows));
+});
+
+router.get("/models/:id", async (req, res): Promise<void> => {
+  const params = GetModelParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: params.error.message });
+    return;
+  }
+
+  const [model] = await db
+    .select()
+    .from(modelsTable)
+    .where(eq(modelsTable.id, params.data.id));
+
+  if (!model) {
+    res.status(404).json({ error: "Model not found" });
+    return;
+  }
+
+  res.json(GetModelResponse.parse(model));
+});
+
+router.patch("/models/:id", async (req, res): Promise<void> => {
+  const params = UpdateModelParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: params.error.message });
+    return;
+  }
+
+  const parsed = UpdateModelBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+
+  const [model] = await db
+    .update(modelsTable)
+    .set(parsed.data)
+    .where(eq(modelsTable.id, params.data.id))
+    .returning();
+
+  if (!model) {
+    res.status(404).json({ error: "Model not found" });
+    return;
+  }
+
+  res.json(UpdateModelResponse.parse(model));
+});
+
+router.post("/models/:id/list", async (req, res): Promise<void> => {
+  const params = ListModelParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: params.error.message });
+    return;
+  }
+
+  const parsed = ListModelBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+
+  const [model] = await db
+    .update(modelsTable)
+    .set({ isListed: true, licensePriceUsd: parsed.data.licensePriceUsd })
+    .where(eq(modelsTable.id, params.data.id))
+    .returning();
+
+  if (!model) {
+    res.status(404).json({ error: "Model not found" });
+    return;
+  }
+
+  await db.insert(activityTable).values({
+    eventType: "model_listed",
+    modelId: model.id,
+    modelName: model.name,
+    actorWallet: parsed.data.creatorWallet,
+    ogExplorerUrl: model.ogExplorerUrl,
+    metadata: JSON.stringify({ licensePriceUsd: parsed.data.licensePriceUsd }),
+  });
+
+  res.json(ListModelResponse.parse(model));
+});
+
+export default router;
