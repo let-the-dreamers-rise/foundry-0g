@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, desc, asc } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { db, modelsTable, activityTable } from "@workspace/db";
 import {
   GetModelParams,
@@ -73,6 +73,12 @@ router.patch("/models/:id", async (req, res): Promise<void> => {
     return;
   }
 
+  const [existing] = await db.select().from(modelsTable).where(eq(modelsTable.id, params.data.id));
+  if (!existing) {
+    res.status(404).json({ error: "Model not found" });
+    return;
+  }
+
   const [model] = await db
     .update(modelsTable)
     .set(parsed.data)
@@ -97,6 +103,18 @@ router.post("/models/:id/list", async (req, res): Promise<void> => {
   const parsed = ListModelBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+
+  const [existing] = await db.select().from(modelsTable).where(eq(modelsTable.id, params.data.id));
+  if (!existing) {
+    res.status(404).json({ error: "Model not found" });
+    return;
+  }
+
+  // Ownership check: only the creator can list the model
+  if (existing.creatorWallet.toLowerCase() !== parsed.data.creatorWallet.toLowerCase()) {
+    res.status(403).json({ error: "Only the model creator can list this model" });
     return;
   }
 

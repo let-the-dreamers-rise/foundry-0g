@@ -69,8 +69,8 @@ export default function ModelDetail() {
         toast({ title: "Inference Complete", description: `Processed in ${res.processingMs}ms via 0G Compute TEE` });
         queryClient.invalidateQueries({ queryKey: getGetModelQueryKey(modelId) });
       },
-      onError: (err: any) => {
-        const msg = err?.message?.includes("403") ? "No active license for this model. Purchase a license first." : "Inference failed.";
+      onError: (err: unknown) => {
+        const msg = err instanceof Error && err.message.includes("403") ? "No active license for this model. Purchase a license first." : "Inference failed.";
         toast({ title: "Inference Failed", description: msg, variant: "destructive" });
       }
     });

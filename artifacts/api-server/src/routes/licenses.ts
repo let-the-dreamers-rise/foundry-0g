@@ -13,13 +13,12 @@ function toJson<T>(data: T): T {
   return JSON.parse(JSON.stringify(data));
 }
 
-function randomHex(len: number): string {
-  const chars = "0123456789abcdef";
-  let result = "0x";
-  for (let i = 0; i < len; i++) {
-    result += chars[Math.floor(Math.random() * 16)];
+function deterministicHex(input: string, len: number): string {
+  let hash = 0n;
+  for (let i = 0; i < input.length; i++) {
+    hash = (hash * 31n + BigInt(input.charCodeAt(i))) % (2n ** 256n);
   }
-  return result;
+  return "0x" + hash.toString(16).padStart(len, "0");
 }
 
 function makeOgExplorerUrl(txHash: string): string {
@@ -85,14 +84,34 @@ router.post("/licenses", async (req, res): Promise<void> => {
   const [model] = await db
     .select()
     .from(modelsTable)
-    .where(eq(modelsTable.id, modelId));
+    .where(and(eq(modelsTable.id, modelId), eq(modelsTable.isListed, true)));
 
   if (!model) {
-    res.status(404).json({ error: "Model not found" });
+    res.status(404).json({ error: "Model not found or not listed" });
     return;
   }
 
-  const paymentTxHash = randomHex(64);
+  // Reject if a non-expired license already exists for this wallet+model
+  const now = new Date();
+  const [existing] = await db
+    .select()
+    .from(licensesTable)
+    .where(
+      and(
+        eq(licensesTable.modelId, modelId),
+        eq(licensesTable.buyerWallet, buyerWallet),
+        gt(licensesTable.activeUntil, now)
+      )
+    );
+  if (existing) {
+    res.status(409).json({ error: "Active license already exists for this wallet" });
+    return;
+  }
+
+  const paymentTxHash = deterministicHex(
+    `${buyerWallet}:${modelId}:${durationDays}:${Date.now()}`,
+    64
+  );
   const activeUntil = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000);
 
   const [license] = await db
@@ -106,7 +125,6 @@ router.post("/licenses", async (req, res): Promise<void> => {
     })
     .returning();
 
-  // Update model license count
   await db
     .update(modelsTable)
     .set({ licenseCount: model.licenseCount + 1 })
@@ -121,12 +139,7 @@ router.post("/licenses", async (req, res): Promise<void> => {
     metadata: JSON.stringify({ durationDays, priceUsd: model.licensePriceUsd }),
   });
 
-  const licenseWithModel = {
-    ...license,
-    model,
-  };
-
-  res.status(201).json(licenseWithModel);
+  res.status(201).json(toJson({ ...license, model }));
 });
 
 export default router;

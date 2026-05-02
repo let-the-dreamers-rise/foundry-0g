@@ -54,7 +54,7 @@ export default function Marketplace() {
               ))}
             </SelectContent>
           </Select>
-          <Select value={sort} onValueChange={(v) => setSort(v as any)}>
+          <Select value={sort} onValueChange={(v) => setSort(v as "popular" | "newest" | "cheapest")}>
             <SelectTrigger className="w-[180px] bg-background">
               <SelectValue placeholder="Sort By" />
             </SelectTrigger>
