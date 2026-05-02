@@ -1,13 +1,14 @@
 import React from "react";
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-import { Cpu, LayoutDashboard, Store, Activity, Plus } from "lucide-react";
+import { Flame, LayoutDashboard, Store, Activity, Cpu, ChevronDown } from "lucide-react";
 import { Button } from "./ui/button";
 
+const DEMO_WALLET = "0x71C7656EC7ab88b098defB751B7401B5f6d8976F";
+
 const NAV_ITEMS = [
-  { href: "/", label: "Home", icon: Cpu },
   { href: "/marketplace", label: "Marketplace", icon: Store },
-  { href: "/studio", label: "Studio", icon: Plus },
+  { href: "/studio", label: "Studio", icon: Cpu },
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/activity", label: "Activity", icon: Activity },
 ];
@@ -15,39 +16,85 @@ const NAV_ITEMS = [
 export function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
 
+  const isActive = (href: string) =>
+    href === "/" ? location === "/" : location.startsWith(href);
+
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col font-sans selection:bg-primary/30 dark">
-      <header className="border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
-        <div className="container flex h-14 max-w-screen-2xl items-center px-4">
-          <Link href="/" className="flex items-center gap-2 mr-6">
-            <Cpu className="h-6 w-6 text-primary" />
-            <span className="font-bold text-lg tracking-tight font-mono">FOUNDRY</span>
+    <div className="min-h-screen bg-background text-foreground flex flex-col font-sans selection:bg-primary/20 dark">
+      <header className="border-b border-border/60 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
+        <div className="container flex h-16 max-w-screen-2xl items-center px-4 gap-8">
+          <Link href="/" className="flex items-center gap-2.5 shrink-0 group">
+            <div className="relative flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 group-hover:bg-primary/20 transition-colors">
+              <Flame className="h-4 w-4 text-primary" />
+            </div>
+            <span className="font-bold text-lg tracking-tight font-mono">
+              FOUNDRY
+            </span>
+            <span className="hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono font-bold text-primary bg-primary/10 border border-primary/20 rounded">
+              0G
+            </span>
           </Link>
-          <nav className="flex items-center gap-6 text-sm font-medium">
+
+          <nav className="hidden md:flex items-center gap-1 text-sm font-medium flex-1">
             {NAV_ITEMS.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "transition-colors hover:text-foreground/80 flex items-center gap-2",
-                  location === item.href || (location.startsWith(item.href) && item.href !== "/")
-                    ? "text-foreground"
-                    : "text-foreground/60"
+                  "relative flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all duration-200",
+                  isActive(item.href)
+                    ? "text-foreground bg-primary/8 nav-link-active"
+                    : "text-muted-foreground hover:text-foreground hover:bg-white/5"
                 )}
               >
-                <item.icon className="h-4 w-4" />
+                <item.icon className={cn("h-3.5 w-3.5", isActive(item.href) && "text-primary")} />
                 {item.label}
               </Link>
             ))}
           </nav>
-          <div className="ml-auto flex items-center space-x-4">
-            <Button variant="outline" className="font-mono text-xs hidden sm:flex">
-              0x7A3c...19F2
+
+          <div className="ml-auto flex items-center gap-3">
+            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border bg-card/50 text-xs font-mono text-muted-foreground hover:border-primary/30 transition-colors cursor-pointer">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-50"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+              </span>
+              {DEMO_WALLET.slice(0, 6)}...{DEMO_WALLET.slice(-4)}
+              <ChevronDown className="h-3 w-3" />
+            </div>
+            <Button asChild size="sm" className="hidden md:flex font-semibold text-xs px-4">
+              <Link href="/studio">New Fine-Tune</Link>
             </Button>
           </div>
         </div>
       </header>
+
       <main className="flex-1 flex flex-col">{children}</main>
+
+      <footer className="border-t border-border/40 py-6 mt-8">
+        <div className="container max-w-screen-2xl px-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-muted-foreground">
+          <div className="flex items-center gap-2">
+            <Flame className="h-3.5 w-3.5 text-primary/60" />
+            <span className="font-mono font-medium">FOUNDRY</span>
+            <span className="text-border">·</span>
+            <span>Built on 0G Network · Galileo Testnet</span>
+          </div>
+          <div className="flex items-center gap-4">
+            <span>ERC-7857 Model NFTs</span>
+            <span className="text-border">·</span>
+            <span>0G Storage + Compute</span>
+            <span className="text-border">·</span>
+            <a
+              href="https://chainscan-galileo.0g.ai"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-primary transition-colors"
+            >
+              0G Explorer ↗
+            </a>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

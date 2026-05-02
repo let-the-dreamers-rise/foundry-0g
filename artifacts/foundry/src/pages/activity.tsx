@@ -1,70 +1,134 @@
+import { useState } from "react";
 import { useGetActivity } from "@workspace/api-client-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { truncateWallet } from "@/lib/utils";
+import { truncateWallet, cn } from "@/lib/utils";
 import { OgLink } from "@/components/0g-link";
-import { Activity as ActivityIcon, Play, Key, PlusCircle, CheckCircle } from "lucide-react";
+import {
+  Activity as ActivityIcon, Play, Key, PlusCircle, CheckCircle, Cpu, Filter
+} from "lucide-react";
+
+const EVENT_CONFIG: Record<string, { icon: typeof CheckCircle; color: string; bg: string; label: string }> = {
+  model_trained: { icon: CheckCircle, color: "text-emerald-400", bg: "bg-emerald-500/10 border-emerald-500/20", label: "Trained" },
+  model_listed: { icon: PlusCircle, color: "text-blue-400", bg: "bg-blue-500/10 border-blue-500/20", label: "Listed" },
+  license_purchased: { icon: Key, color: "text-amber-400", bg: "bg-amber-500/10 border-amber-500/20", label: "Licensed" },
+  inference_run: { icon: Play, color: "text-purple-400", bg: "bg-purple-500/10 border-purple-500/20", label: "Inference" },
+  job_started: { icon: Cpu, color: "text-slate-400", bg: "bg-slate-500/10 border-slate-500/20", label: "Job" },
+};
+
+const EVENT_TYPES = [
+  { value: "all", label: "All" },
+  { value: "model_trained", label: "Training" },
+  { value: "model_listed", label: "Listings" },
+  { value: "license_purchased", label: "Licenses" },
+  { value: "inference_run", label: "Inference" },
+];
+
+function getEventText(event: { eventType: string; modelName?: string }) {
+  const name = event.modelName ?? "unknown";
+  switch (event.eventType) {
+    case "model_trained": return <>Model <span className="font-semibold text-foreground">{name}</span> completed training on 0G Compute</>;
+    case "model_listed": return <>Model <span className="font-semibold text-foreground">{name}</span> listed on marketplace</>;
+    case "license_purchased": return <>Developer purchased 30-day license for <span className="font-semibold text-foreground">{name}</span></>;
+    case "inference_run": return <>Inference run on <span className="font-semibold text-foreground">{name}</span> via 0G TEE</>;
+    case "job_started": return <>Fine-tune job started for <span className="font-semibold text-foreground">{name}</span></>;
+    default: return <>Platform event</>;
+  }
+}
+
+function timeAgo(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return "just now";
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  return `${Math.floor(h / 24)}d ago`;
+}
 
 export default function Activity() {
   const { data: events, isLoading } = useGetActivity({ limit: 50 });
+  const [filter, setFilter] = useState("all");
 
-  const getEventIcon = (type: string) => {
-    switch (type) {
-      case "model_trained": return <CheckCircle className="h-4 w-4 text-emerald-500" />;
-      case "model_listed": return <PlusCircle className="h-4 w-4 text-blue-500" />;
-      case "license_purchased": return <Key className="h-4 w-4 text-amber-500" />;
-      case "inference_run": return <Play className="h-4 w-4 text-purple-500" />;
-      case "job_started": return <ActivityIcon className="h-4 w-4 text-slate-500" />;
-      default: return <ActivityIcon className="h-4 w-4 text-muted-foreground" />;
-    }
-  };
-
-  const getEventText = (event: any) => {
-    switch (event.eventType) {
-      case "model_trained": return <span>Model <span className="font-bold text-foreground">{event.modelName}</span> completed training.</span>;
-      case "model_listed": return <span>Model <span className="font-bold text-foreground">{event.modelName}</span> listed on marketplace.</span>;
-      case "license_purchased": return <span>Purchased license for <span className="font-bold text-foreground">{event.modelName}</span>.</span>;
-      case "inference_run": return <span>Ran inference on <span className="font-bold text-foreground">{event.modelName}</span>.</span>;
-      case "job_started": return <span>Started fine-tune job for <span className="font-bold text-foreground">{event.modelName}</span>.</span>;
-      default: return <span>Unknown event.</span>;
-    }
-  };
+  const filteredEvents = filter === "all"
+    ? events
+    : events?.filter((e) => e.eventType === filter);
 
   return (
-    <div className="container max-w-screen-md mx-auto p-4 sm:p-8 space-y-8">
+    <div className="container max-w-screen-lg mx-auto p-4 sm:p-8 space-y-8">
       <div>
-        <h1 className="text-3xl font-bold font-mono uppercase text-primary">Platform Activity</h1>
-        <p className="text-muted-foreground mt-1">Live feed of decentralized actions.</p>
+        <div className="text-xs font-mono text-primary uppercase tracking-widest mb-2">Live Feed</div>
+        <h1 className="text-3xl font-bold tracking-tight">Platform Activity</h1>
+        <p className="text-muted-foreground mt-1 text-sm">
+          Real-time decentralized actions across the Foundry network.
+        </p>
       </div>
 
-      <div className="space-y-4 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-border before:to-transparent">
+      <div className="flex items-center gap-2 flex-wrap">
+        <Filter className="h-3.5 w-3.5 text-muted-foreground" />
+        {EVENT_TYPES.map((type) => (
+          <button
+            key={type.value}
+            onClick={() => setFilter(type.value)}
+            className={cn(
+              "px-3 py-1.5 rounded-full text-xs font-semibold border transition-all duration-150",
+              filter === type.value
+                ? "pill-active"
+                : "border-border/60 text-muted-foreground hover:border-border hover:text-foreground bg-card/40"
+            )}
+          >
+            {type.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="space-y-3">
         {isLoading ? (
-          Array.from({ length: 5 }).map((_, i) => (
-            <Skeleton key={i} className="h-24 w-full rounded-xl" />
+          Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} className="h-20 w-full rounded-xl" />
           ))
-        ) : events?.length ? (
-          events.map(event => (
-            <div key={event.id} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
-              <div className="flex items-center justify-center w-10 h-10 rounded-full border border-border bg-background shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 shadow-sm z-10">
-                {getEventIcon(event.eventType)}
-              </div>
-              <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-4 rounded-xl border border-border/50 bg-card/50 hover:bg-card transition-colors shadow-sm">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="font-mono text-xs font-bold text-muted-foreground">{truncateWallet(event.actorWallet)}</div>
-                  <div className="text-xs text-muted-foreground">{new Date(event.createdAt).toLocaleString()}</div>
+        ) : filteredEvents?.length ? (
+          filteredEvents.map((event) => {
+            const config = EVENT_CONFIG[event.eventType] ?? EVENT_CONFIG.job_started;
+            const Icon = config.icon;
+            return (
+              <div
+                key={event.id}
+                className="flex items-start gap-4 p-4 rounded-xl border border-border/50 bg-card/40 hover:bg-card/70 transition-all duration-150 group"
+              >
+                <div className={cn("flex items-center justify-center w-9 h-9 rounded-lg border shrink-0 mt-0.5", config.bg)}>
+                  <Icon className={cn("h-4 w-4", config.color)} />
                 </div>
-                <div className="text-sm">
-                  {getEventText(event)}
-                </div>
-                {event.ogExplorerUrl && (
-                  <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
-                    0G Proof: <OgLink hash={event.ogExplorerUrl.split('/').pop() || ''} type="tx" />
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="text-sm leading-snug">{getEventText(event)}</p>
+                    <span className="text-xs text-muted-foreground font-mono shrink-0 pt-0.5">
+                      {timeAgo(event.createdAt)}
+                    </span>
                   </div>
-                )}
+                  <div className="flex items-center gap-3 mt-2">
+                    <span className="text-xs text-muted-foreground font-mono">
+                      {truncateWallet(event.actorWallet)}
+                    </span>
+                    {event.ogExplorerUrl && (
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <span>0G proof:</span>
+                        <OgLink hash={event.ogExplorerUrl.split("/").pop() || ""} type="tx" />
+                      </div>
+                    )}
+                    <span className={cn("inline-flex px-1.5 py-0.5 rounded text-[10px] font-bold font-mono border", config.bg, config.color)}>
+                      {config.label}
+                    </span>
+                  </div>
+                </div>
               </div>
-            </div>
-          ))
+            );
+          })
         ) : (
-          <div className="text-center py-8 text-muted-foreground">No activity found.</div>
+          <div className="text-center py-16 text-muted-foreground border border-dashed border-border/40 rounded-xl">
+            <ActivityIcon className="h-8 w-8 mx-auto mb-3 opacity-30" />
+            <p className="text-sm">No activity found.</p>
+          </div>
         )}
       </div>
     </div>
