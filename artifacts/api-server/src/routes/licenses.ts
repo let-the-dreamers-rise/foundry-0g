@@ -9,6 +9,10 @@ import {
 
 const router: IRouter = Router();
 
+function toJson<T>(data: T): T {
+  return JSON.parse(JSON.stringify(data));
+}
+
 function randomHex(len: number): string {
   const chars = "0123456789abcdef";
   let result = "0x";
@@ -66,7 +70,7 @@ router.get("/licenses", async (req, res): Promise<void> => {
     )
     .orderBy(desc(licensesTable.createdAt));
 
-  res.json(ListLicensesResponse.parse(licenses));
+  res.json(ListLicensesResponse.parse(toJson(licenses)));
 });
 
 router.post("/licenses", async (req, res): Promise<void> => {

@@ -17,9 +17,10 @@ export default function Marketplace() {
     sort,
   });
 
-  const filteredModels = models?.filter(m => 
-    m.name.toLowerCase().includes(search.toLowerCase()) || 
-    m.description.toLowerCase().includes(search.toLowerCase())
+  const filteredModels = models?.filter(m =>
+    m.isListed &&
+    (m.name.toLowerCase().includes(search.toLowerCase()) ||
+     m.description.toLowerCase().includes(search.toLowerCase()))
   );
 
   return (

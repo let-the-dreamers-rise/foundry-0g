@@ -16,6 +16,10 @@ import {
 
 const router: IRouter = Router();
 
+function toJson<T>(data: T): T {
+  return JSON.parse(JSON.stringify(data));
+}
+
 router.get("/models", async (req, res): Promise<void> => {
   const query = ListModelsQueryParams.safeParse(req.query);
 
@@ -33,7 +37,7 @@ router.get("/models", async (req, res): Promise<void> => {
     else if (sort === "cheapest") rows = rows.sort((a, b) => a.licensePriceUsd - b.licensePriceUsd);
   }
 
-  res.json(ListModelsResponse.parse(rows));
+  res.json(ListModelsResponse.parse(toJson(rows)));
 });
 
 router.get("/models/:id", async (req, res): Promise<void> => {
@@ -53,7 +57,7 @@ router.get("/models/:id", async (req, res): Promise<void> => {
     return;
   }
 
-  res.json(GetModelResponse.parse(model));
+  res.json(GetModelResponse.parse(toJson(model)));
 });
 
 router.patch("/models/:id", async (req, res): Promise<void> => {
@@ -80,7 +84,7 @@ router.patch("/models/:id", async (req, res): Promise<void> => {
     return;
   }
 
-  res.json(UpdateModelResponse.parse(model));
+  res.json(UpdateModelResponse.parse(toJson(model)));
 });
 
 router.post("/models/:id/list", async (req, res): Promise<void> => {
@@ -116,7 +120,7 @@ router.post("/models/:id/list", async (req, res): Promise<void> => {
     metadata: JSON.stringify({ licensePriceUsd: parsed.data.licensePriceUsd }),
   });
 
-  res.json(ListModelResponse.parse(model));
+  res.json(ListModelResponse.parse(toJson(model)));
 });
 
 export default router;

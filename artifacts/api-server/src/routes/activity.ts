@@ -18,7 +18,7 @@ router.get("/activity", async (req, res): Promise<void> => {
     .orderBy(desc(activityTable.createdAt))
     .limit(limit);
 
-  res.json(GetActivityResponse.parse(events));
+  res.json(GetActivityResponse.parse(JSON.parse(JSON.stringify(events))));
 });
 
 export default router;
