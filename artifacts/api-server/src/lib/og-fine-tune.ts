@@ -74,7 +74,7 @@ export async function createFineTuneTask(args: {
       "fine-tuning",
       "create-task",
       "--provider", provider,
-      "--dataset", args.datasetRootHash,
+      "--dataset-path", args.datasetRootHash,
       "--base-model", args.baseModel,
       "--label", args.jobLabel,
       "--json",
