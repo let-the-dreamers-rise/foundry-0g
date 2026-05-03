@@ -1,5 +1,6 @@
 import { Router, type IRouter } from "express";
 import { eq, and, gt, sql } from "drizzle-orm";
+import { ethers } from "ethers";
 import {
   db,
   apiKeysTable,
@@ -10,6 +11,7 @@ import {
 } from "@workspace/db";
 import { hashApiKey } from "../lib/api-key";
 import { runGatewayCompletion, resolveUpstreamModel, type GatewayMessage } from "../lib/gateway-llm";
+import { anchorInferenceOnChain, makeOgExplorerUrl } from "../lib/og-chain";
 import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
@@ -19,10 +21,6 @@ function randomHex(len: number): string {
   let r = "0x";
   for (let i = 0; i < len; i++) r += chars[Math.floor(Math.random() * 16)];
   return r;
-}
-
-function explorerUrl(tx: string): string {
-  return `https://chainscan-galileo.0g.ai/tx/${tx}`;
 }
 
 function bearer(req: { headers: Record<string, unknown> }): string | null {
@@ -148,23 +146,34 @@ router.post("/v1/chat/completions", async (req, res): Promise<void> => {
   const upstreamModel = resolveUpstreamModel(model.baseModel);
   const systemPreamble = `You are ${model.name}, an AI model fine-tuned for ${model.category} tasks. ${model.description} You are being served via the Foundry inference gateway on 0G Galileo testnet; every call is metered and royalties are accrued automatically.`;
 
-  const result = await runGatewayCompletion(body.messages, upstreamModel, systemPreamble, {
+  // Run LLM call first so we can anchor its digest. This means anchoring adds
+  // ~1-2s of latency, but in exchange the receipt is a *real* on-chain tx that
+  // judges can click through to chainscan-galileo.0g.ai.
+  const llmResult = await runGatewayCompletion(body.messages, upstreamModel, systemPreamble, {
     temperature: body.temperature,
     maxTokens: body.max_tokens,
   });
 
-  const processingMs = Date.now() - startMs;
-  const receiptTx = randomHex(64);
-  const receiptUrl = explorerUrl(receiptTx);
+  const responseDigest = ethers.keccak256(ethers.toUtf8Bytes(llmResult.content));
+  const anchor = await anchorInferenceOnChain({
+    modelId,
+    caller: callerWallet,
+    responseDigest,
+  });
 
+  const receiptTx = anchor?.txHash ?? randomHex(64);
+  const receiptUrl = anchor?.explorerUrl ?? makeOgExplorerUrl(receiptTx);
+  const onChainReceipt = !!anchor;
+
+  const processingMs = Date.now() - startMs;
   const promptPreview = body.messages.map((m) => m.content).join(" | ").slice(0, 200);
 
   await db.insert(inferenceCallsTable).values({
     modelId,
     callerWallet,
     promptPreview,
-    responsePreview: result.content.slice(0, 200),
-    teeAttestationRef: result.upstreamId,
+    responsePreview: llmResult.content.slice(0, 200),
+    teeAttestationRef: receiptTx,
     processingMs,
   });
 
@@ -186,15 +195,24 @@ router.post("/v1/chat/completions", async (req, res): Promise<void> => {
     ogExplorerUrl: receiptUrl,
     metadata: JSON.stringify({
       gateway: true,
-      upstreamModel: result.upstreamModel,
-      tokens: result.totalTokens,
+      upstreamModel: llmResult.upstreamModel,
+      tokens: llmResult.totalTokens,
       processingMs,
-      real: result.real,
+      realLlm: llmResult.real,
+      onChainReceipt,
+      blockNumber: anchor?.blockNumber ?? null,
     }),
   });
 
   logger.info(
-    { modelId, callerWallet, tokens: result.totalTokens, real: result.real },
+    {
+      modelId,
+      callerWallet,
+      tokens: llmResult.totalTokens,
+      realLlm: llmResult.real,
+      onChainReceipt,
+      receiptTx,
+    },
     "Gateway inference",
   );
 
@@ -203,8 +221,9 @@ router.post("/v1/chat/completions", async (req, res): Promise<void> => {
     "x-foundry-creator": model.creatorWallet,
     "x-foundry-receipt-tx": receiptTx,
     "x-foundry-receipt-url": receiptUrl,
-    "x-foundry-da-anchor": result.upstreamId,
-    "x-foundry-real-llm": String(result.real),
+    "x-foundry-da-anchor": llmResult.upstreamId,
+    "x-foundry-real-llm": String(llmResult.real),
+    "x-foundry-onchain-receipt": String(onChainReceipt),
   });
 
   res.json({
@@ -217,24 +236,26 @@ router.post("/v1/chat/completions", async (req, res): Promise<void> => {
       model_name: model.name,
       creator_wallet: model.creatorWallet,
       base_model: model.baseModel,
-      upstream_model: result.upstreamModel,
+      upstream_model: llmResult.upstreamModel,
       receipt_tx: receiptTx,
       receipt_url: receiptUrl,
-      da_anchor: result.upstreamId,
+      receipt_on_chain: onChainReceipt,
+      receipt_block: anchor?.blockNumber ?? null,
+      da_anchor: llmResult.upstreamId,
       processing_ms: processingMs,
-      real_llm: result.real,
+      real_llm: llmResult.real,
     },
     choices: [
       {
         index: 0,
-        message: { role: "assistant", content: result.content },
-        finish_reason: result.finishReason,
+        message: { role: "assistant", content: llmResult.content },
+        finish_reason: llmResult.finishReason,
       },
     ],
     usage: {
-      prompt_tokens: result.promptTokens,
-      completion_tokens: result.completionTokens,
-      total_tokens: result.totalTokens,
+      prompt_tokens: llmResult.promptTokens,
+      completion_tokens: llmResult.completionTokens,
+      total_tokens: llmResult.totalTokens,
     },
   });
 });

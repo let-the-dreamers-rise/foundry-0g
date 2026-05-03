@@ -149,3 +149,66 @@ export async function verifyLicensePayment(args: {
 export function makeOgExplorerUrl(txHash: string): string {
   return explorer(txHash);
 }
+
+export type InferenceAnchorResult = {
+  txHash: string;
+  explorerUrl: string;
+  blockNumber: number | null;
+  real: boolean;
+};
+
+let cachedAnchorWallet: ethers.Wallet | null = null;
+function getAnchorWallet(): ethers.Wallet | null {
+  const pk = process.env.OG_PRIVATE_KEY;
+  if (!pk) return null;
+  if (cachedAnchorWallet) return cachedAnchorWallet;
+  const provider = new ethers.JsonRpcProvider(OG_EVM_RPC);
+  cachedAnchorWallet = new ethers.Wallet(pk, provider);
+  return cachedAnchorWallet;
+}
+
+/**
+ * Post a real on-chain transaction anchoring an inference call to 0G Galileo.
+ *
+ * Sends a 0-value self-transfer carrying the keccak256(modelId || caller || responseHash)
+ * digest in calldata. The transaction hash this returns is genuinely mined on
+ * 0G Galileo and resolves cleanly on chainscan-galileo.0g.ai/tx/<hash>.
+ *
+ * Returns null when OG_PRIVATE_KEY is missing or the network call fails — the
+ * caller is responsible for falling back to a clearly-marked simulated hash.
+ */
+export async function anchorInferenceOnChain(args: {
+  modelId: number;
+  caller: string;
+  responseDigest: string;
+}): Promise<InferenceAnchorResult | null> {
+  const wallet = getAnchorWallet();
+  if (!wallet) {
+    logger.info("anchorInferenceOnChain: OG_PRIVATE_KEY missing, skipping");
+    return null;
+  }
+
+  try {
+    const payload = ethers.solidityPacked(
+      ["string", "uint256", "address", "bytes32"],
+      ["FoundryInfer", BigInt(args.modelId), args.caller, args.responseDigest],
+    );
+
+    const tx = await wallet.sendTransaction({
+      to: wallet.address,
+      value: 0n,
+      data: payload,
+    });
+    const receipt = await tx.wait();
+
+    return {
+      txHash: tx.hash,
+      explorerUrl: explorer(tx.hash),
+      blockNumber: receipt?.blockNumber ?? null,
+      real: true,
+    };
+  } catch (err) {
+    logger.warn({ err: String(err) }, "anchorInferenceOnChain: failed");
+    return null;
+  }
+}

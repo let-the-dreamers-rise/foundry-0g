@@ -8,6 +8,7 @@ import {
   InferModelResponse,
 } from "@workspace/api-zod";
 import { callOgCompute } from "../lib/og-compute";
+import { anchorInferenceOnChain } from "../lib/og-chain";
 import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
@@ -192,14 +193,27 @@ router.post("/models/:id/infer", async (req, res): Promise<void> => {
     .set({ inferenceCount: model.inferenceCount + 1 })
     .where(eq(modelsTable.id, modelId));
 
-  const inferTxHash = randomHex(64);
+  const responseDigest = ethers.keccak256(ethers.toUtf8Bytes(response));
+  const anchor = await anchorInferenceOnChain({
+    modelId,
+    caller: callerWallet,
+    responseDigest,
+  });
+  const inferTxHash = anchor?.txHash ?? randomHex(64);
+  const inferTxUrl = anchor?.explorerUrl ?? makeOgExplorerUrl(inferTxHash);
   await db.insert(activityTable).values({
     eventType: "inference_run",
     modelId,
     modelName: model.name,
     actorWallet: callerWallet,
-    ogExplorerUrl: makeOgExplorerUrl(inferTxHash),
-    metadata: JSON.stringify({ teeRef, processingMs, real: inferenceReal }),
+    ogExplorerUrl: inferTxUrl,
+    metadata: JSON.stringify({
+      teeRef,
+      processingMs,
+      real: inferenceReal,
+      onChainReceipt: !!anchor,
+      blockNumber: anchor?.blockNumber ?? null,
+    }),
   });
 
   res.json(
