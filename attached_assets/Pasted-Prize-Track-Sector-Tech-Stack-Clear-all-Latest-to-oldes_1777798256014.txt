@@ -1,0 +1,175 @@
+Prize Track
+
+Sector
+
+Tech Stack
+
+Clear all
+
+Latest to oldest
+
+
+1697
+DC Data
+It enables individuals and organizations to monetize their personal or proprietary data while maintaining full privacy and control.
+
+Tech Stack
+Web3
+Builder
+
+Martin Yeung
+NFT
+AI
+
+
+1797
+0GARGOS
+A Programmable Physical Security Layer | Bridging silicon-rooted trust into Web3 governance through the modular 0G stack
+
+Tech Stack
+React
+Builder
+
+Youvandra Febrial
+DAO
+DeFi
+Infra
+Other
+
+
+347
+TrustFolio
+AI-powered onchain reputation system that verifies skills, stores proof on 0G, and enables trustless hiring through verifiable portfolios and intelligent scoring.
+
+Tech Stack
+React
+Builder
+
+Zax Raider
+NFT
+Infra
+AI
+SocialFi
+
+
+2614
+0g Build Proof
+Excellence passports for serious 0G builders. BuildProof turns submissions into judge-ready evidence: repo inspection, agent review, 0G Storage roots, 0G Chain anchors, and a public leaderboard the e
+
+Tech Stack
+Web3
+Builder
+
+Mfon Ante
+Infra
+
+
+1587
+SealedMind
+We built a memory layer for AI encrypted, portable, and provably secure. Your AI remembers everything. Nobody else can read it. You own it forever.
+
+Tech Stack
+React
+Builder
+
+Laxmi Khengare
+SocialFi
+AI
+Infra
+
+
+272
+Orbit AI
+Orbit AI is a decentralized orbital AI cloud for agents, powered by satellites and in-orbit AI inference.
+
+Tech Stack
+Python
+Builder
+
+Gus Liu
+AI
+Infra
+RWA
+Other
+
+
+570
+InfinAI
+InfinAI is your All-in-One Web3 Data AI Agent. From rapid on-chain tracking to deep Swarm analysis, we turn crypto noise into custom visual dashboards.
+
+Tech Stack
+Web3
+Builder
+
+Paul chan
+AI
+
+
+849
+ProofPost
+ProofPost is an AI x Web3 SocialFi protocol built in the 0G APAC Hackathon where users stake tokens on content and use AI agents on 0G Compute to detect synthetic media and enforce accountability.
+
+Tech Stack
+React
+Builder
+
+Konstantinos Andreou
+SocialFi
+AI
+Other
+Infra
+
+
+907
+Fortress
+Fortress is an autonomous USDC yield vault on Base powered entirely by 0G. Our TEE agents on runs Risk Guardian and Yield Optimizer modules inside one secure enclave inference.
+
+Tech Stack
+Next
+Builder
+H
+Hardik Gupta
+DeFi
+AI
+
+
+2529
+AgentHub
+AgentHub is the secure execution platform and marketplace for third-party AI agents — essentially "AWS for AI agents". It solves the core trust problem in the emerging agent economy: how users and per
+
+Tech Stack
+React
+Builder
+
+Steve Ao
+AI
+Infra
+SocialFi
+RWA
+
+
+2514
+Claw_Wallet
+ClawWallet is a crypto wallet built for Agents. It never exposes private keys locally, uses 2-3 shard fragmentation along with disaster recovery based on 0G storage.
+
+Tech Stack
+React
+Builder
+z
+z c
+AI
+Infra
+
+
+2510
+NeoSoul
+NeoSoul is building the ultimate A2A economy. AI prediction markets fueled by a self-evolving protocol and agentic oracle swarms.
+
+Tech Stack
+Web3
+Builder
+
+Kai Y
+AI
+Other
+Infra

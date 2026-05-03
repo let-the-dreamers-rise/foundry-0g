@@ -1,0 +1,169 @@
+
+125
+ChainShield
+ChainShield is a smart contract security auditing and notarization platform.
+
+Tech Stack
+React
+Builder
+
+ayden lee
+AI
+
+
+242
+zer0Gig
+zer0Gig is an on-chain gig platform that doesn't just move payments on-chain, it replaces the entire middle layer of freelancing with autonomous AI agents.
+
+Tech Stack
+React
+Builder
+
+Dave Agape
+AI
+Infra
+DeFi
+NFT
+
+
+359
+FX Risk Agent
+AI-powered FX risk monitoring agent for cross-border payments. Every AI decision is permanently stored on 0G Storage and recorded on 0G Chain — creating a verifiable audit trail.
+
+Tech Stack
+Solidity
+Builder
+
+smallironman Chan
+DeFi
+AI
+Infra
+
+
+144
+Division Privacy
+AI-powered privacy smart contract generator for 0G Chain by Sunima. 25 privacy templates: Dark Pool, Lending, Staking, Prediction Market, Voting, Auction, Mixer, Credit Score, NFT Auction, Multisig,
+
+Tech Stack
+Python
+Builder
+
+Alex Andreev
+AI
+Infra
+
+2043
+AgentMem
+Decentralized Knowledge Infrastructure for Autonomous Agents
+
+Tech Stack
+Next
+Builder
+z
+zhang tutu
+AI
+
+
+2227
+alphatrace
+A verifiable AI trading agent that records every decision on-chain, bringing transparency and trust to DeFi.
+
+Tech Stack
+React
+Builder
+
+yousuf aziz
+DeFi
+AI
+Other
+Infra
+
+
+183
+LinkWorld
+A decentralized communication solution solving high roaming costs, inflexible plans, and KYC barriers for global cross-border users.
+
+Tech Stack
+Web3
+Builder
+
+liam.zhang
+SocialFi
+Other
+Infra
+
+
+198
+Aegis Vault
+Aegis Vault is a verifiable AI-managed trading vault on 0G where users define strict on-chain risk mandates, operators compete by committing AI models + strategies on-chain
+
+Tech Stack
+React
+Builder
+
+Jumardi N/A
+AI
+DeFi
+Infra
+
+
+603
+GEM
+Gems is a decentralized live-streaming platform that enables creators to build their own micro-economies through tokenized communities, NFTs, and real-time engagement.
+
+Tech Stack
+Next
+Builder
+
+Thomas bihary
+SocialFi
+DAO
+NFT
+
+
+529
+MoonFun
+The First AI-Native Agent Launchpad🌐✨ | Where Memes Evolve into Self-Aware, Social-Native Entities
+
+Tech Stack
+React
+Builder
+
+MoonFun AI
+DeFi
+AI
+
+
+2187
+Attensys
+AttenSys is an onchain educational platform built on OG that empowers educators to create/sell courses, while enabling organizations to host and manage bootcamps with verifiable certification
+
+Tech Stack
+Web3
+Builder
+
+Kehinde Akinbola
+Other
+NFT
+
+
+2190
+Synapse
+Decentralized memory layer for AI agents. One agent stores, every agent learns — built on 0G Storage & Chain.
+
+Tech Stack
+Web3
+Builder
+
+Muhammad Indra Kusuma
+AI
+Infra
+
+Previous
+1
+2
+3
+4
+5
+
+Next

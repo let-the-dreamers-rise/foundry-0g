@@ -1,0 +1,178 @@
+Overview
+Prizes & Judging
+Schedule
+Resource
+Project Gallery
+
+Start Register
+
+Prize Track
+
+Sector
+
+Tech Stack
+
+Clear all
+
+Latest to oldest
+
+
+1684
+AgentMart
+AgentMart is a decentralized platform where autonomous AI agents can register, offer services, get hired for tasks, and maintain persistent long-term memory. Powered by 0G Chain and 0G Storage.
+
+Tech Stack
+Python
+Builder
+
+Not lazy
+AI
+
+
+1640
+0G OpenClaw
+Your key. Your agent. 0G OpenClaw is not just another AI tool that asks for an API key. It is a personal agent that follows your wallet.
+
+Tech Stack
+Web3
+Builder
+
+Lewis Gao
+AI
+Other
+Infra
+
+
+1699
+DeFI risk Manager
+Autonomous DeFi Risk Manager** is an AI-powered Web3 dApp that automates portfolio management by generating and executing data-driven DeFi strategies based on user risk levels. Built on 0G
+
+Tech Stack
+React
+Builder
+
+David Barasa
+DeFi
+
+
+337
+Musashi
+MUSASHI is a conviction-weighted token intelligence engine on 0G , 7-gate elimination, 4 specialists, adversarial debate. Every STRIKE is on-chain. 97% of tokens fail.
+
+Tech Stack
+Go
+Builder
+
+Yeheskiel Yunus Tame
+AI
+Infra
+NFT
+
+
+336
+Kuberna Labs
+Open-source execution layer for autonomous AI agents. Built an SDK that lets agents execute cross-chain transactions via intents, TEEs, and zkTLS. One API for Ethereum, Solana, NEAR. MIT licensed. Bui
+
+Tech Stack
+React
+Builder
+
+KAWACU RUGIRANEZA Arnaud Kennedy
+Infra
+AI
+DeFi
+
+
+1296
+AgentPay
+AgentPay is an on-chain micropayment and billing protocol for autonomous AI agents that lets them register identities, escrow and settle payments, price services dynamically, and log invoice history.
+
+Tech Stack
+OG Storage
+Builder
+
+Akanimoh Johnson
+AI
+Infra
+DAO
+Other
+
+
+263
+Coal
+The commerce platform for the agent economy on 0G. Products, checkout, paywalls, subscriptions, splits. Agents pay via x402. 0G powers verifiable receipts, AI-native discovery, and on-chain proofs
+
+Tech Stack
+Next
+Builder
+
+bernard namangala
+AI
+DeFi
+Infra
+
+
+4876
+áafsafsa
+Tech Stack
+React
+Builder
+L
+Lee aaaa
+NFT
+Gaming
+RWA
+
+
+1475
+Building Culture
+Building Culture is a Web3 platform that brings real estate on-chain. It allows people to invest in property through fractional ownership using blockchain tokens, creating transparent transactions,
+
+Tech Stack
+Next
+Builder
+
+Thomas bihary
+DAO
+RWA
+NFT
+Infra
+
+
+1728
+Carbon Vault copy
+Carbon Vault is a decentralized sustainability platform that bridges carbon credit analytics, zero-knowledge verification, and DeFi incentives.
+
+Tech Stack
+React
+Builder
+
+David Barasa
+RWA
+
+
+1335
+AIsphere
+AIsphere is the noosphere for AI Agents — a decentralized, on-chain layer of collective intelligence where every Agent is born with an identity, grows through lived experience, and contributes to a sh
+
+Tech Stack
+React
+Builder
+
+Henry Martin
+AI
+NFT
+Infra
+
+
+7229
+Ghast AI
+Ghast AI is a Web3-native AI assistant and the first fully decentralized on-chain "OpenClaw." It delivers true data sovereignty with no complexity.just install the browser extension and start using it
+
+Tech Stack
+Web3
+Builder
+
+wang peng
+AI
+

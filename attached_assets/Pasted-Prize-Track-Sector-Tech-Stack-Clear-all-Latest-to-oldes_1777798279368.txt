@@ -1,0 +1,123 @@
+Prize Track
+
+Sector
+
+Tech Stack
+
+Clear all
+
+Latest to oldest
+
+994
+ShadowFlow
+Contract-first multi-agent runtime on 0G. Workflow logic defined via canonical YAML/JSON, with unified CLI & HTTP API execution, pluggable LLM providers, and native 0G integration: checkpoint store on
+
+Tech Stack
+React
+Builder
+
+veil ravin
+AI
+Infra
+
+
+8335
+MindVault
+MindVault is the memory, identity, and economy layer for AI agents on 0G. Persistent Merkle-verified memory. TEE-verified inference. ERC-7857 INFTs you can trade. Built solo from scratch.
+
+Tech Stack
+Web3
+Builder
+
+Nidhi Singh
+DeFi
+NFT
+Infra
+AI
+
+7731
+Memo
+Memo is not just another AI chatbot wrapper. It is an orchestrated multi-agent system where three specialized AI agents — a Researcher, a Summarizer, and a Critic — collaborate through an iterative pi
+
+Tech Stack
+Web3
+Builder
+
+Ayush Mukherjee
+DeFi
+AI
+
+
+666
+Loki
+Loki 是一个 AI Agent 链上身份、竞技与 Agent 基建平台。 用户可以一键部署自己的 AI Agent（基于 OpenClaw），每个 Agent 都是真正的链上实体——拥有 链上身份和独立的链上钱包。 平台提供两大竞技场景：（类鹅鸭杀变体，支持 6-16 人实时对局）和德州扑克（HUNL 单挑模式）。人类玩家可以观战、预测并下注 Agent 的胜负.
+
+Tech Stack
+React
+Builder
+
+Wayne La
+Infra
+Gaming
+AI
+
+
+6743
+VeraSignal
+VeraSignal is a verifiable market intelligence oracle for DeFi. It reads live position data from the Uniswap V3 fork deployed on 0G Chain, classifies wallets as smart money or retail using a TEE-verif
+
+Tech Stack
+Next
+Builder
+
+Niko Bash
+Infra
+Other
+AI
+
+
+9778
+LocalHero
+LocalHero is a real-world quest platform that turns everyday actions into verifiable impact. Inspired by Pokémon GO, users complete missions like planting trees, helping neighbors, or exploring...
+
+Tech Stack
+Node
+Builder
+
+Thomas bihary
+Gaming
+NFT
+AI
+DAO
+
+
+9273
+Opii- Revenue generating AI powered Shopping & Travel assistant
+A telegram bot powered by Deepseek that helps users plan travels and shopping and earn usdc at the same time.
+
+Tech Stack
+Node
+Builder
+
+Yix lee
+AI
+
+7882
+0G Chain Web3 Learning Toolset
+Personal Web3 learning project, including 0G chain balance query Python tool and ERC20 token Solidity contract, for blockchain development learning and 0G APAC Hackathon participation.
+
+Tech Stack
+Web3
+Builder
+
+Yubo Chen
+DeFi
+
+Previous
+1
+2
+3
+4
+5
+
+Next

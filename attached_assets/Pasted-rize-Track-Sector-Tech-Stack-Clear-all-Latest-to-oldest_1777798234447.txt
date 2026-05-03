@@ -1,0 +1,158 @@
+rize Track
+
+Sector
+
+Tech Stack
+
+Clear all
+
+Latest to oldest
+
+
+1815
+Sovereign Core: Bare-Metal Memory Allocation for AI Nodes
+A custom C++/NASM memory allocator and 10-Chamber Aggregator that runs a 16-bit AI and zero-latency P2P matrix deterministically on 8GB of RAM, bypassing cloud bloat.
+
+Tech Stack
+Python
+Builder
+
+Zemelak Alemayehu
+AI
+Gaming
+Other
+
+
+738
+0G Market Bot
+0G Market Bot is a Telegram-native marketplace interface for 0G mainnet.
+
+Tech Stack
+Web3
+Builder
+
+Mfon Ante
+Infra
+
+
+536
+ZeroBot
+Telegram-native 0G mainnet agent wallet that lets users store files, inspect compute providers, and execute anchored compute actions from chat.
+
+Tech Stack
+Web3
+Builder
+
+Mfon Ante
+Infra
+
+1669
+ai-bounty-board
+AI Bounty Board is an escrow-first bounty marketplace demo for hackathons. It helps sponsors turn rough ideas into clear briefs, helps builders submit stronger work, and gives sponsors an AI-assisted
+
+Tech Stack
+Web3
+Builder
+
+jun x
+AI
+Infra
+
+
+1595
+temp
+kbhjl
+
+Tech Stack
+Next
+Builder
+
+AI Idea
+SocialFi
+
+
+1017
+YieldBoostAi
+Mainnet-first verifiable yield optimizer on 0G that turns idle crypto balances into proof-backed strategies.
+
+Tech Stack
+React
+Builder
+
+Cucu Cahman Gantina
+DeFi
+AI
+Infra
+NFT
+
+1577
+ZendraOG
+Zendra generates: 🧠 AI-powered wallet scoring (0–100) 🐋 Smart money detection based on behavior patterns ⚠️ Risk intelligence (concentration, meme exposure, fragmentation) 📊 Real-time market contex
+
+Tech Stack
+Ethers
+Builder
+
+ONYEDIKA NWAFOR
+AI
+Other
+
+
+1608
+SovereignVault
+SovereignVault is a self-custodial privacy-focused platform that allows users to create and manage autonomous AI agents while keeping all sensitive data encrypted and under full user control.
+
+Tech Stack
+Solidity
+Builder
+
+Crypto Enthusiast
+AI
+DeFi
+
+
+256
+0G Thermidora
+OpenClaw API-driven AI agent platform for the 0G blockchain. Deploy and manage agents for storage, chain monitoring, KV data management, and security surveillance via a complete REST API suite.
+
+Tech Stack
+React
+Builder
+
+Jeffrey Lewis
+AI
+Infra
+
+
+750
+POD
+POD gives freelancers a portable, verifiable reputation built on 0G Storage, 0G Compute AI scoring, and Agent ID minting on 0G Galileo Testnet.
+
+Tech Stack
+React
+Builder
+
+Michael Eze
+AI
+Infra
+
+
+983
+Provus Protocol
+AI trading agent on 0G Chain. DeepSeek signals TEE-attested on 0G every 15s. 10,000+ on-chain txs. Verifiable strategy reputation via ELO scoring.
+
+Tech Stack
+Next
+Builder
+
+og xavier
+DeFi
+AI
+
+
+542
+Railbeam
+AI era decentralized payment railway.
+
+Tech Stack
+Solidity
