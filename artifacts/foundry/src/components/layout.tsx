@@ -1,10 +1,16 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-import { Flame, LayoutDashboard, Store, Activity, Cpu, ChevronDown } from "lucide-react";
+import { Flame, LayoutDashboard, Store, Activity, Cpu, Wallet, AlertTriangle, LogOut, ChevronDown, Loader2 } from "lucide-react";
 import { Button } from "./ui/button";
-
-const DEMO_WALLET = "0x71C7656EC7ab88b098defB751B7401B5f6d8976F";
+import { useWallet } from "@/context/wallet";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
 
 const NAV_ITEMS = [
   { href: "/marketplace", label: "Marketplace", icon: Store },
@@ -12,6 +18,89 @@ const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/activity", label: "Activity", icon: Activity },
 ];
+
+function WalletButton() {
+  const { address, isConnected, isConnecting, isWrongChain, hasWallet, connect, disconnect, switchToOgChain, error } =
+    useWallet();
+
+  if (isConnecting) {
+    return (
+      <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border bg-card/50 text-xs font-mono text-muted-foreground">
+        <Loader2 className="h-3 w-3 animate-spin" />
+        Connecting…
+      </div>
+    );
+  }
+
+  if (isConnected && address) {
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            className={cn(
+              "flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-mono transition-colors cursor-pointer",
+              isWrongChain
+                ? "border-yellow-500/50 bg-yellow-500/10 text-yellow-400 hover:border-yellow-500/70"
+                : "border-primary/30 bg-primary/5 text-foreground hover:border-primary/50"
+            )}
+          >
+            {isWrongChain ? (
+              <AlertTriangle className="h-3 w-3 text-yellow-400 shrink-0" />
+            ) : (
+              <span className="relative flex h-2 w-2 shrink-0">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-50" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
+              </span>
+            )}
+            {address.slice(0, 6)}…{address.slice(-4)}
+            <ChevronDown className="h-3 w-3 text-muted-foreground" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-52 font-mono text-xs">
+          <div className="px-3 py-2 text-muted-foreground text-[10px]">
+            <div className="text-foreground font-semibold mb-0.5">Connected Wallet</div>
+            <div className="break-all">{address}</div>
+          </div>
+          {isWrongChain && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="text-yellow-400 focus:text-yellow-300 cursor-pointer"
+                onClick={() => switchToOgChain()}
+              >
+                <AlertTriangle className="h-3.5 w-3.5 mr-2" />
+                Switch to 0G Galileo
+              </DropdownMenuItem>
+            </>
+          )}
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            className="text-destructive focus:text-destructive cursor-pointer"
+            onClick={disconnect}
+          >
+            <LogOut className="h-3.5 w-3.5 mr-2" />
+            Disconnect
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+  }
+
+  return (
+    <div className="flex flex-col items-end gap-1">
+      <button
+        onClick={connect}
+        className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border bg-card/50 text-xs font-mono text-muted-foreground hover:border-primary/30 hover:text-foreground transition-colors cursor-pointer"
+      >
+        <Wallet className="h-3 w-3" />
+        {hasWallet ? "Connect Wallet" : "Install MetaMask"}
+      </button>
+      {error && (
+        <span className="text-[10px] text-destructive font-mono">{error}</span>
+      )}
+    </div>
+  );
+}
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
@@ -54,14 +143,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </nav>
 
           <div className="ml-auto flex items-center gap-3">
-            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border bg-card/50 text-xs font-mono text-muted-foreground hover:border-primary/30 transition-colors cursor-pointer">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-50"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
-              </span>
-              {DEMO_WALLET.slice(0, 6)}...{DEMO_WALLET.slice(-4)}
-              <ChevronDown className="h-3 w-3" />
-            </div>
+            <WalletButton />
             <Button asChild size="sm" className="hidden md:flex font-semibold text-xs px-4">
               <Link href="/studio">New Fine-Tune</Link>
             </Button>

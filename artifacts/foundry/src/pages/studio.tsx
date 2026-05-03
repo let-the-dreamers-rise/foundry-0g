@@ -3,6 +3,8 @@ import {
   useListFineTuneJobs, useCreateFineTuneJob, useListModels, useListModel,
   getListFineTuneJobsQueryKey, getListModelsQueryKey,
 } from "@workspace/api-client-react";
+import { useQuery } from "@tanstack/react-query";
+import { useActiveWallet } from "@/context/wallet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -17,14 +19,66 @@ import { truncateHash, STATUS_COLORS, STATUS_LABELS, CATEGORY_COLORS, cn } from 
 import { OgLink } from "@/components/0g-link";
 import {
   RefreshCcw, Plus, Store, ChevronRight, ChevronLeft,
-  Cpu, Database, Settings2, Rocket, Check, AlertCircle
+  Cpu, Database, Settings2, Rocket, Check, AlertCircle, Wifi, WifiOff
 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 
-const DEMO_WALLET = "0x71C7656EC7ab88b098defB751B7401B5f6d8976F";
+type OgStatus = {
+  ogStorageConfigured: boolean;
+  ogComputeConfigured: boolean;
+  ogEvmRpc: string;
+  ogIndexerUrl: string;
+  ogComputeBrokerUrl: string | null;
+};
+
+function OgStatusBanner() {
+  const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+  const { data } = useQuery<OgStatus>({
+    queryKey: ["og-status"],
+    queryFn: () => fetch(`${base}/api/og-status`).then((r) => r.json()),
+    staleTime: 30_000,
+  });
+
+  if (!data) return null;
+
+  const allLive = data.ogStorageConfigured && data.ogComputeConfigured;
+  const anyLive = data.ogStorageConfigured || data.ogComputeConfigured;
+
+  return (
+    <div
+      className={cn(
+        "flex flex-wrap items-center gap-3 px-4 py-2.5 rounded-lg border text-xs font-mono",
+        allLive
+          ? "border-emerald-500/30 bg-emerald-500/5 text-emerald-300"
+          : anyLive
+          ? "border-amber-500/30 bg-amber-500/5 text-amber-300"
+          : "border-border/40 bg-muted/20 text-muted-foreground"
+      )}
+    >
+      {allLive ? (
+        <Wifi className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+      ) : (
+        <WifiOff className="h-3.5 w-3.5 shrink-0" />
+      )}
+      <span className="font-semibold">
+        {allLive ? "0G Network: Fully Connected" : anyLive ? "0G Network: Partial" : "0G Network: Demo Mode"}
+      </span>
+      <span className="text-border">·</span>
+      <span className={data.ogStorageConfigured ? "text-emerald-400" : "opacity-60"}>
+        Storage {data.ogStorageConfigured ? "✓ Live" : "○ Demo"}
+      </span>
+      <span className="text-border">·</span>
+      <span className={data.ogComputeConfigured ? "text-emerald-400" : "opacity-60"}>
+        Compute {data.ogComputeConfigured ? "✓ Live" : "○ Demo"}
+      </span>
+      <span className="text-border">·</span>
+      <span className="opacity-60">Galileo Testnet</span>
+    </div>
+  );
+}
 
 const formSchema = z.object({
   creatorWallet: z.string(),
@@ -54,19 +108,20 @@ const BASE_MODEL_COSTS: Record<string, number> = {
 export default function Studio() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const wallet = useActiveWallet();
   const [step, setStep] = useState(1);
   const [listDialogOpen, setListDialogOpen] = useState(false);
   const [listingJobId, setListingJobId] = useState<number | null>(null);
   const [listPrice, setListPrice] = useState("29");
 
   const { data: jobs, isLoading, refetch } = useListFineTuneJobs(
-    { creatorWallet: DEMO_WALLET },
-    { query: { refetchInterval: 3000, queryKey: getListFineTuneJobsQueryKey({ creatorWallet: DEMO_WALLET }) } }
+    { creatorWallet: wallet },
+    { query: { refetchInterval: 3000, queryKey: getListFineTuneJobsQueryKey({ creatorWallet: wallet }) } }
   );
 
   const { data: creatorModels, refetch: refetchModels } = useListModels(
-    { creatorWallet: DEMO_WALLET },
-    { query: { queryKey: getListModelsQueryKey({ creatorWallet: DEMO_WALLET }) } }
+    { creatorWallet: wallet },
+    { query: { queryKey: getListModelsQueryKey({ creatorWallet: wallet }) } }
   );
 
   const createMutation = useCreateFineTuneJob();
@@ -75,7 +130,7 @@ export default function Studio() {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      creatorWallet: DEMO_WALLET,
+      creatorWallet: wallet,
       baseModel: "Qwen2.5-0.5B-Instruct",
       modelName: "",
       description: "",
@@ -100,8 +155,8 @@ export default function Studio() {
       {
         onSuccess: (job) => {
           toast({ title: "Job Submitted!", description: `Fine-tune job #${job.id} queued. Uploading to 0G Storage...` });
-          form.reset({ ...form.formState.defaultValues as FormValues, creatorWallet: DEMO_WALLET });
-          queryClient.invalidateQueries({ queryKey: getListFineTuneJobsQueryKey({ creatorWallet: DEMO_WALLET }) });
+          form.reset({ ...form.formState.defaultValues as FormValues, creatorWallet: wallet });
+          queryClient.invalidateQueries({ queryKey: getListFineTuneJobsQueryKey({ creatorWallet: wallet }) });
           setStep(1);
         },
         onError: () => {
@@ -126,13 +181,13 @@ export default function Studio() {
       return;
     }
     listModelMutation.mutate(
-      { id: model.id, data: { licensePriceUsd: Number(listPrice), creatorWallet: DEMO_WALLET } },
+      { id: model.id, data: { licensePriceUsd: Number(listPrice), creatorWallet: wallet } },
       {
         onSuccess: () => {
           toast({ title: "Listed!", description: `${model.name} is now on the marketplace.` });
           setListDialogOpen(false);
           setListingJobId(null);
-          queryClient.invalidateQueries({ queryKey: getListModelsQueryKey({ creatorWallet: DEMO_WALLET }) });
+          queryClient.invalidateQueries({ queryKey: getListModelsQueryKey({ creatorWallet: wallet }) });
           refetchModels();
         },
         onError: () => {
@@ -160,6 +215,8 @@ export default function Studio() {
           Train a custom AI model on 0G's decentralized GPU network.
         </p>
       </div>
+
+      <OgStatusBanner />
 
       <div className="grid lg:grid-cols-2 gap-8">
         <div>

@@ -1,4 +1,5 @@
 import { useGetCreatorStats } from "@workspace/api-client-react";
+import { useActiveWallet } from "@/context/wallet";
 import { ModelCard } from "@/components/model-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,8 +16,6 @@ import {
 } from "recharts";
 import { useState } from "react";
 import { Link } from "wouter";
-
-const DEMO_WALLET = "0x71C7656EC7ab88b098defB751B7401B5f6d8976F";
 
 const EARNINGS_DATA = [
   { day: "Mon", value: 18 },
@@ -55,7 +54,8 @@ function CustomTooltip({ active, payload, label }: { active?: boolean; payload?:
 }
 
 export default function Dashboard() {
-  const { data: stats, isLoading } = useGetCreatorStats({ creatorWallet: DEMO_WALLET });
+  const wallet = useActiveWallet();
+  const { data: stats, isLoading } = useGetCreatorStats({ creatorWallet: wallet });
 
   const STAT_CARDS = [
     {
@@ -102,8 +102,8 @@ export default function Dashboard() {
           <div className="text-xs font-mono text-primary uppercase tracking-widest mb-2">Creator Portal</div>
           <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
           <div className="flex items-center gap-2 mt-1">
-            <span className="text-xs text-muted-foreground font-mono">{DEMO_WALLET}</span>
-            <CopyButton text={DEMO_WALLET} />
+            <span className="text-xs text-muted-foreground font-mono">{wallet}</span>
+            <CopyButton text={wallet} />
           </div>
         </div>
         <Button asChild className="font-semibold text-sm">

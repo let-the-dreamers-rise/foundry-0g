@@ -3,6 +3,7 @@ import { useParams } from "wouter";
 import {
   useGetModel, getGetModelQueryKey, usePurchaseLicense, useInferModel
 } from "@workspace/api-client-react";
+import { useActiveWallet } from "@/context/wallet";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -17,8 +18,6 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
-
-const DEMO_WALLET = "0x71C7656EC7ab88b098defB751B7401B5f6d8976F";
 
 type LicenseTier = "monthly" | "quarterly" | "annual";
 
@@ -51,6 +50,7 @@ export default function ModelDetail() {
   const modelId = Number(id);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const wallet = useActiveWallet();
 
   const { data: model, isLoading } = useGetModel(modelId, {
     query: { enabled: !!modelId, queryKey: getGetModelQueryKey(modelId) },
@@ -68,7 +68,7 @@ export default function ModelDetail() {
   const handlePurchase = () => {
     const durationMap: Record<LicenseTier, number> = { monthly: 30, quarterly: 90, annual: 365 };
     purchaseMutation.mutate(
-      { data: { modelId, buyerWallet: DEMO_WALLET, durationDays: durationMap[selectedTier] } },
+      { data: { modelId, buyerWallet: wallet, durationDays: durationMap[selectedTier] } },
       {
         onSuccess: () => {
           toast({ title: "License Purchased!", description: `${selectedTier} license is now active.` });
@@ -85,7 +85,7 @@ export default function ModelDetail() {
     if (!prompt.trim()) return;
     setOutput(""); setInferTime(null); setTeeRef(null);
     inferMutation.mutate(
-      { id: modelId, data: { prompt: prompt.trim(), callerWallet: DEMO_WALLET } },
+      { id: modelId, data: { prompt: prompt.trim(), callerWallet: wallet } },
       {
         onSuccess: (res) => {
           setOutput(res.response);
@@ -456,7 +456,7 @@ console.log(response.output);
               </Button>
 
               <p className="text-[10px] text-center text-muted-foreground font-mono">
-                Wallet: {truncateWallet(DEMO_WALLET)} · Galileo Testnet
+                Wallet: {truncateWallet(wallet)} · Galileo Testnet
               </p>
             </div>
           </div>

@@ -1,11 +1,12 @@
 import { Router, type IRouter } from "express";
-import { eq, desc, and, gt } from "drizzle-orm";
+import { eq, and, gt } from "drizzle-orm";
 import { db, modelsTable, licensesTable, inferenceCallsTable, activityTable } from "@workspace/db";
 import {
   InferModelParams,
   InferModelBody,
   InferModelResponse,
 } from "@workspace/api-zod";
+import { callOgCompute } from "../lib/og-compute";
 
 const router: IRouter = Router();
 
@@ -38,22 +39,22 @@ const INFERENCE_RESPONSES: Record<string, string[]> = {
     "The bug is in your useEffect dependency array. Adding `userId` will prevent the stale closure and ensure fresh data on each user change.",
     "Consider using a WeakMap for this caching pattern — it allows garbage collection of keys and prevents memory leaks in long-running applications.",
   ],
-  "finance": [
+  finance: [
     "Based on current market conditions and your risk tolerance of moderate, a 60/40 equity-bond allocation with quarterly rebalancing aligns with your 10-year horizon.",
     "The DeFi protocol's APY of 18% carries significant smart contract risk. Your maximum position should not exceed 5% of your total portfolio.",
     "Dollar-cost averaging into this position over 12 months would reduce volatility exposure by approximately 34% compared to a lump-sum entry.",
   ],
-  "medical": [
+  medical: [
     "This symptom pattern is consistent with vitamin D deficiency, which affects approximately 40% of adults. A 25-hydroxyvitamin D blood test would confirm this.",
     "The interaction between these two medications may reduce efficacy by up to 30%. Discuss timing adjustments with your prescribing physician.",
     "Based on the described symptoms, this presentation warrants prompt evaluation. Please consult a healthcare provider within 24 hours.",
   ],
-  "legal": [
+  legal: [
     "This clause constitutes a non-compete agreement enforceable under Delaware law for 18 months within a 50-mile radius. Courts in your jurisdiction have upheld similar provisions.",
     "The force majeure clause as written excludes pandemic events. Amendment before signing is advisable given current business climate uncertainties.",
     "Your IP assignment clause appears overly broad. Carve-outs for personal projects created on personal time are standard and legally defensible.",
   ],
-  "other": [
+  other: [
     "Based on the fine-tuned knowledge embedded in this model, here is a tailored response to your query with domain-specific insights.",
     "This model has been optimized for your specific use case. The response incorporates patterns learned from your custom dataset.",
     "I've analyzed your question using the specialized training data. Here's my best answer based on the learned context.",
@@ -86,7 +87,6 @@ router.post("/models/:id/infer", async (req, res): Promise<void> => {
     return;
   }
 
-  // Check license
   const now = new Date();
   const [activeLicense] = await db
     .select()
@@ -99,7 +99,6 @@ router.post("/models/:id/infer", async (req, res): Promise<void> => {
       )
     );
 
-  // For demo: allow inference if caller is creator OR has a license
   const isCreator = model.creatorWallet === callerWallet;
   if (!activeLicense && !isCreator) {
     res.status(403).json({ error: "No active license for this model" });
@@ -108,18 +107,32 @@ router.post("/models/:id/infer", async (req, res): Promise<void> => {
 
   const startMs = Date.now();
 
-  // Simulate 0G Compute inference with realistic response
-  await sleep(Math.floor(Math.random() * 800) + 400);
+  // Try real 0G Compute broker first
+  const modelRef = model.modelRootHash ?? model.baseModel ?? "unknown";
+  const ogResult = await callOgCompute(modelRef, prompt, model.category);
 
-  const responsePool = INFERENCE_RESPONSES[model.category] ?? INFERENCE_RESPONSES["other"]!;
-  const baseResponse = responsePool[Math.floor(Math.random() * responsePool.length)]!;
-  const response = `[Fine-tuned on ${model.baseModel} | Model: ${model.name}]\n\n${baseResponse}`;
+  let response: string;
+  let teeRef: string;
+  let inferenceReal = false;
+
+  if (ogResult) {
+    response = `[0G Compute TEE | Model: ${model.name}]\n\n${ogResult.response}`;
+    teeRef = ogResult.teeAttestationRef;
+    inferenceReal = true;
+  } else {
+    // Simulated fallback
+    await sleep(Math.floor(Math.random() * 800) + 400);
+    const responsePool =
+      INFERENCE_RESPONSES[model.category] ?? INFERENCE_RESPONSES["other"]!;
+    const baseResponse =
+      responsePool[Math.floor(Math.random() * responsePool.length)]!;
+    response = `[Fine-tuned on ${model.baseModel} | Model: ${model.name}]\n\n${baseResponse}`;
+    teeRef = `tee_sim_${randomHex(16).slice(2)}_${Date.now()}`;
+  }
 
   const processingMs = Date.now() - startMs;
-  const teeRef = `tee_${randomHex(16).slice(2)}_${Date.now()}`;
   const calledAt = new Date();
 
-  // Log inference call
   await db.insert(inferenceCallsTable).values({
     modelId,
     callerWallet,
@@ -129,7 +142,6 @@ router.post("/models/:id/infer", async (req, res): Promise<void> => {
     processingMs,
   });
 
-  // Update inference count
   await db
     .update(modelsTable)
     .set({ inferenceCount: model.inferenceCount + 1 })
@@ -142,14 +154,16 @@ router.post("/models/:id/infer", async (req, res): Promise<void> => {
     modelName: model.name,
     actorWallet: callerWallet,
     ogExplorerUrl: makeOgExplorerUrl(inferTxHash),
-    metadata: JSON.stringify({ teeRef, processingMs }),
+    metadata: JSON.stringify({ teeRef, processingMs, real: inferenceReal }),
   });
 
   res.json(
     InferModelResponse.parse({
       modelId,
       response,
-      teeProvider: "0G Compute TEE v2",
+      teeProvider: inferenceReal
+        ? "0G Compute TEE (Live)"
+        : "0G Compute TEE (Simulated)",
       teeAttestationRef: teeRef,
       processingMs,
       calledAt: calledAt.toISOString(),

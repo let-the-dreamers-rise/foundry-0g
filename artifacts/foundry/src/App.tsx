@@ -10,6 +10,7 @@ import ModelDetail from "@/pages/model-detail";
 import Studio from "@/pages/studio";
 import Dashboard from "@/pages/dashboard";
 import Activity from "@/pages/activity";
+import { WalletProvider } from "@/context/wallet";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -23,22 +24,24 @@ const queryClient = new QueryClient({
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-          <Layout>
-            <Switch>
-              <Route path="/" component={Home} />
-              <Route path="/marketplace" component={Marketplace} />
-              <Route path="/models/:id" component={ModelDetail} />
-              <Route path="/studio" component={Studio} />
-              <Route path="/dashboard" component={Dashboard} />
-              <Route path="/activity" component={Activity} />
-              <Route component={NotFound} />
-            </Switch>
-          </Layout>
-        </WouterRouter>
-        <Toaster />
-      </TooltipProvider>
+      <WalletProvider>
+        <TooltipProvider>
+          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+            <Layout>
+              <Switch>
+                <Route path="/" component={Home} />
+                <Route path="/marketplace" component={Marketplace} />
+                <Route path="/models/:id" component={ModelDetail} />
+                <Route path="/studio" component={Studio} />
+                <Route path="/dashboard" component={Dashboard} />
+                <Route path="/activity" component={Activity} />
+                <Route component={NotFound} />
+              </Switch>
+            </Layout>
+          </WouterRouter>
+          <Toaster />
+        </TooltipProvider>
+      </WalletProvider>
     </QueryClientProvider>
   );
 }
