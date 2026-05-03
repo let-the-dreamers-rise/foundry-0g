@@ -37,3 +37,8 @@ externalPort = 3000
 
 [nix]
 channel = "stable-25_05"
+
+[userenv]
+
+[userenv.shared]
+FOUNDRY_CONTRACT_ADDRESS = "0xA0448Cd63f746a60447cfF1817ec9781C25F7b25"

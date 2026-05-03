@@ -181,7 +181,7 @@ export default function Studio() {
     }
     const signedAt = Date.now();
     const signature = await signTypedData(
-      { name: "Foundry", version: "1", chainId: 16601 },
+      { name: "Foundry", version: "1", chainId: 16602 },
       {
         CreateFineTune: [
           { name: "creator", type: "address" },
@@ -239,7 +239,7 @@ export default function Studio() {
     const signedAt = Date.now();
     const priceInt = Math.round(Number(listPrice));
     const signature = await signTypedData(
-      { name: "Foundry", version: "1", chainId: 16601 },
+      { name: "Foundry", version: "1", chainId: 16602 },
       {
         ListModel: [
           { name: "creator", type: "address" },

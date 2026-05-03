@@ -5,7 +5,7 @@ pragma solidity ^0.8.24;
 /// @notice Each token represents a fine-tuned AI model whose weights are stored
 ///         on 0G Storage. Holders have on-chain proof of ownership and control
 ///         license issuance & royalties.
-/// @dev Deployment target: 0G Galileo testnet (chainId 16601).
+/// @dev Deployment target: 0G Galileo testnet (chainId 16602).
 contract Foundry7857 {
     // ------------------------------------------------------------------ events
     event ModelMinted(

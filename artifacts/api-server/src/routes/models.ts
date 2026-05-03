@@ -123,7 +123,7 @@ router.post("/models/:id/list", async (req, res): Promise<void> => {
   // any attacker could spoof creatorWallet:0xVictim and list a victim's model.
   try {
     const recovered = (await import("ethers")).ethers.verifyTypedData(
-      { name: "Foundry", version: "1", chainId: 16601 },
+      { name: "Foundry", version: "1", chainId: 16602 },
       {
         ListModel: [
           { name: "creator", type: "address" },

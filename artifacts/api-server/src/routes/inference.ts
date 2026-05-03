@@ -15,7 +15,7 @@ const router: IRouter = Router();
 const EIP712_DOMAIN = {
   name: "Foundry",
   version: "1",
-  chainId: 16601,
+  chainId: 16602,
 } as const;
 
 const EIP712_INFER_TYPES: Record<string, Array<{ name: string; type: string }>> = {

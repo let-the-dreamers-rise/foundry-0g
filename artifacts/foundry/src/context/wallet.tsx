@@ -8,7 +8,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Wallet } from "lucide-react";
 
-const OG_CHAIN_ID = "0x40d9";
+const OG_CHAIN_ID = "0x40da";
 
 function domainFields(domain: Record<string, unknown>): Array<{ name: string; type: string }> {
   const fields: Array<{ name: string; type: string }> = [];
