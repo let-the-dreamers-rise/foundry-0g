@@ -1,0 +1,132 @@
+Submission Requirements
+All submissions must be completed through HackQuest and must include the following materials.
+
+(Please note that the information provided here is the most up-to-date. Content on other platforms may not be updated yet.)
+
+1. Basic Project Information
+Each team must provide:
+
+Project name
+
+One-sentence project description in no more than 30 words
+
+A short summary clearly explaining:
+
+what the project does
+
+which problem it solves
+
+which 0G component(s) are used
+
+2. Code Repository
+Each team must submit:
+
+A GitHub repository link
+
+Repository must be public or shared with judges for review
+
+The repo should show substantial development progress during the hackathon period
+
+Empty repos, placeholder repos, or repos without meaningful commits may be disqualified
+
+3. 0G Integration Proof
+This is the core requirement of the hackathon. Each submission must include:
+
+A 0G mainnet contract address
+
+A 0G Explorer link showing verifiable on-chain activity
+
+Clear proof that at least one 0G core component has been integrated into the project
+
+Accepted 0G components include, but are not limited to:
+
+0G Storage
+
+0G Compute
+
+0G Chain
+
+Agent ID
+
+Privacy or secure execution features within the 0G stack
+
+Projects without actual 0G integration will be considered invalid.
+
+4. Demo Video
+Each submission must provide:
+
+A demo video of no more than 3 minutes
+
+The video must clearly show:
+
+the product’s core functionality
+
+the user flow or use case
+
+how the 0G component is actually used in the project
+
+Slide-only or concept-only videos will not be accepted
+
+Video must be uploaded through a publicly accessible link such as YouTube or Loom
+
+5. README / Documentation
+Each team must submit a project README in English or Chinese that includes:
+
+Project overview
+
+System architecture diagram or technical description
+
+Explanation of which 0G modules are used
+
+Description of how those modules support the product
+
+Local deployment or reproduction steps for judges
+
+Test account details, faucet instructions, or other reviewer notes if needed
+
+Strong documentation will be an important part of judging.
+
+6. Public X Post
+Each team must publish at least one public project post on X and submit the post link through HackQuest.
+
+The post must include:
+
+Project name
+
+Demo screenshot or short demo clip
+
+Hashtags: #0GHackathon and #BuildOn0G
+
+Tags: @0G_labs @0g_CN @0g_Eco @HackQuest_
+
+This requirement is mandatory and will be checked during review.
+
+7. Optional Bonus Materials
+The following are not mandatory, but may strengthen a submission:
+
+Pitch deck or slides
+
+Frontend demo link
+
+User feedback screenshots
+
+User testing notes
+
+Backend API documentation
+
+Tutorial or technical write-up showing how the 0G integration works
+
+Judging Criteria
+Projects will be evaluated based on:
+
+0G Technical Integration Depth & Innovation
+
+Technical Implementation & Completeness
+
+Product Value & Market Potential
+
+User Experience & Demo Quality
+
+Team Capability & Documentation
+
+At least one 0G component must be integrated into every valid submission. Projects that fail to meet this requirement may be disqualified or receive major score deductions.

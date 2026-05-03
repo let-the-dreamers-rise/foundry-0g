@@ -1,5 +1,6 @@
 import React from "react";
 import { Link, useLocation } from "wouter";
+import { LiveOnChainBanner } from "./live-onchain-banner";
 import { cn } from "@/lib/utils";
 import { Flame, LayoutDashboard, Store, Activity, Cpu, Wallet, AlertTriangle, LogOut, ChevronDown, Loader2 } from "lucide-react";
 import { Button } from "./ui/button";
@@ -110,6 +111,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col font-sans selection:bg-primary/20 dark">
+      <LiveOnChainBanner />
       <header className="border-b border-border/60 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
         <div className="container flex h-16 max-w-screen-2xl items-center px-4 gap-8">
           <Link href="/" className="flex items-center gap-2.5 shrink-0 group">
