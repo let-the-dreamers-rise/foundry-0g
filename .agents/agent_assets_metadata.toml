@@ -1,0 +1,14 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "ax6Nd-XcOK1A8O_Mjq3Dc"
+uri = "file://artifacts/pitch-deck/public/hero-network.png"
+type = "image"
+title = "hero-network"
+
+[[generated]]
+id = "XAuPqr-1jVcDHlHJHMRZc"
+uri = "file://artifacts/pitch-deck/public/cube-asset.png"
+type = "image"
+title = "cube-asset"
