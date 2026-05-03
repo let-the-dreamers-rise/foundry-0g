@@ -1,203 +1,167 @@
-# Foundry — Decentralized AI Model Fine-Tuning & Licensing on 0G
+# Foundry
 
-> **Hugging Face + Replicate, fully on-chain.**
-> Upload a dataset → fine-tune on 0G's decentralized GPU network → own your model as an **ERC-7857** NFT → license inference to developers and earn recurring on-chain revenue.
+> **The OpenAI-compatible inference layer for 0G.** Mint a fine-tuned model as an NFT, gate it with on-chain licenses, and let anyone call it through a drop-in `/v1/chat/completions` endpoint — every call settled with a real on-chain receipt.
 
-**Submission for the 0G APAC Hackathon — May 2026.**
+Built for the **0G APAC Hackathon** · Live on **0G Galileo Testnet (chainId 16602)**
 
-## 🔗 Live On-Chain Proof
-
-| Item | Value |
-|---|---|
-| Network | **0G-Galileo-Testnet** (chainId `16602` / `0x40da`) |
-| Foundry7857 Contract | [`0xA0448Cd63f746a60447cfF1817ec9781C25F7b25`](https://chainscan-galileo.0g.ai/address/0xA0448Cd63f746a60447cfF1817ec9781C25F7b25) |
-| Deployment Tx | [`0x20c25681…66ad7`](https://chainscan-galileo.0g.ai/tx/0x20c256812bf56029ca3898d16c54a840eae9e99a53b01f4ec24041ef09d66ad7) |
-| Live API status endpoint | `GET /api/og-status` |
-| 0G Storage SDK | [`@0glabs/0g-ts-sdk`](https://www.npmjs.com/package/@0glabs/0g-ts-sdk) — real `Indexer.upload()` |
-| 0G Compute | OpenAI-compatible TEE broker — real `POST /v1/chat/completions` |
-
-A green "**LIVE ON 0G GALILEO**" banner at the very top of the app links to the live contract — judges can verify in one click.
+- **Live contract:** [`0xA0448Cd63f746a60447cfF1817ec9781C25F7b25`](https://chainscan-galileo.0g.ai/address/0xA0448Cd63f746a60447cfF1817ec9781C25F7b25)
+- **Standard:** ERC-7857 (Foundry7857 model NFT)
+- **Stack:** 0G Chain · 0G Storage · 0G Compute · 0G DA
 
 ---
 
-## The Problem
+## The Wedge
 
-AI is concentrated in 5 companies. Independent creators who fine-tune valuable domain models (legal, medical, customer-support, code) have no native way to:
+Every other AI marketplace on 0G stops at "list a model." Foundry turns every minted model into a **callable SaaS the moment it ships**:
 
-- **Prove ownership** of weights they trained
-- **Prevent unauthorized inference** without expensive API gating
-- **Monetize** without surrendering 30%+ to a centralized marketplace
-
-Hugging Face hosts the weights. OpenAI runs the inference. The creator captures none of the upside.
-
-## The Solution
-
-Foundry uses 0G's full stack to make AI models **first-class on-chain assets**:
-
-| 0G Module | How Foundry Uses It | Verifiable Output |
-|---|---|---|
-| **0G Storage** | Datasets and model weights uploaded via `@0glabs/0g-ts-sdk` `Indexer.upload()` against `https://indexer-storage-testnet-standard.0g.ai`. Each upload signs with the creator's private key on the Galileo EVM RPC. | A 32-byte `rootHash` per file → `https://storagescan-galileo.0g.ai/file/<rootHash>` |
-| **0G Chain** | Custom `Foundry7857` registry deployed via solc + ethers v6 to chainId 16602. Real `mint()` calls per fine-tuned model; real on-chain payment verification (`JsonRpcProvider.getTransaction`) for license purchases. | Live address: `0xA0448C…7b25` |
-| **0G Compute** | Inference proxied through the TEE broker's OpenAI-compatible `/v1/chat/completions`. Each call signs `{modelRef,ts}` with EIP-191 (`personal_sign`), passes the model's storage root hash in `X-Model-Root-Hash`, and stores the returned TEE attestation reference in Postgres. | TEE attestation ref persisted on every inference row |
-| **0G Compute (Fine-Tuning CLI)** | `0g-compute-cli fine-tuning create-task --dataset-path <…> --provider <…>` shelled out as a real subprocess; status polled every 5 s, progress streamed to DB. | When `OG_COMPUTE_PROVIDER` is set, real provider txs |
-
-## What's Real vs. Simulated (transparent disclosure)
-
-We never fake a "live" link. The `LiveOnChainBanner` and `/api/og-status` endpoint expose exactly which subsystems are wired:
-
-| Component | Real | Notes |
-|---|---|---|
-| Wallet connect (MetaMask + WalletConnect / Reown) | ✅ | Auto-switches to chainId `0x40da` (16602) |
-| EIP-712 signed fine-tune submission | ✅ | Mandatory on `POST /fine-tune` (creator-ownership proof, 10-min replay window) |
-| EIP-712 signed model listings | ✅ | Mandatory on `POST /models/:id/list` (anti-spoof) |
-| EIP-712 signed license purchases | ✅ | Mandatory on `POST /licenses` |
-| EIP-712 signed inference calls | ✅ | Mandatory on `POST /models/:id/infer` |
-| 0G Storage uploads | ✅ live | `OG_PRIVATE_KEY` set; throws `OgStorageConfigError` rather than fake-hash fallback |
-| ERC-7857 mint via ethers v6 | ✅ live | Contract `0xA0448C…7b25` deployed, `OG_PRIVATE_KEY` funded |
-| On-chain license payment verification | ✅ | When buyer supplies `paymentTxHash`, server checks `tx.to`, `tx.value`, confirmations |
-| 0G Compute inference (real broker) | ⚪ simulated | Set `OG_COMPUTE_BROKER_URL` + `OG_COMPUTE_PROVIDER` to flip live; deterministic stub pool otherwise |
-| 0G Compute fine-tuning (real CLI) | ⚪ simulated | Set `OG_COMPUTE_PROVIDER` to flip live; simulated training loop otherwise |
-
-## Architecture
-
-```
-┌────────────────────────────────────────────────────────────────────────┐
-│  artifacts/foundry            React 18 + Vite + Tailwind v4 + shadcn   │
-│                                                                        │
-│  ┌─ home              Landing + featured models                        │
-│  ├─ marketplace       Browse / filter 10+ seeded models                │
-│  ├─ studio            3-step wizard: configure → dataset → train       │
-│  ├─ model-detail      Live inference + EIP-712 license purchase        │
-│  ├─ dashboard         Creator earnings (real weekly revenue)           │
-│  └─ activity          Live event feed                                  │
-│                                                                        │
-│  context/wallet.tsx   MetaMask + WalletConnect (Reown AppKit)          │
-│  components/          live-onchain-banner, model-card, og-link, …      │
-└────────────────────────────────────────────────────────────────────────┘
-                       │  OpenAPI + Orval-generated client
-                       ▼
-┌────────────────────────────────────────────────────────────────────────┐
-│  artifacts/api-server         Express 5 + Drizzle ORM + Zod            │
-│                                                                        │
-│  routes/                                                               │
-│   ├─ fine-tune        POST /fine-tune    → background pipeline         │
-│   ├─ models           Marketplace catalogue + filters                  │
-│   ├─ licenses         EIP-712 verify + on-chain payment check          │
-│   ├─ inference        License gate → 0G Compute TEE call               │
-│   ├─ stats            Platform + creator stats with weekly chart       │
-│   └─ og-status        Live integration health for the UI banner        │
-│                                                                        │
-│  lib/                                                                  │
-│   ├─ og-storage.ts    Real Indexer.upload via @0glabs/0g-ts-sdk        │
-│   ├─ og-chain.ts      ethers v6 → Foundry7857.mint + payment verify    │
-│   ├─ og-compute.ts    Signed POST to TEE broker; X-Model-Root-Hash     │
-│   └─ og-fine-tune.ts  Real `0g-compute-cli` CLI wrapper + status poll  │
-└────────────────────────────────────────────────────────────────────────┘
-                       │
-                       ▼
-                PostgreSQL (Drizzle migrations)
-                fine_tune_jobs · models · licenses ·
-                inference_calls · activity_events
-
-┌────────────────────────────────────────────────────────────────────────┐
-│  contracts/Foundry7857.sol    Solidity 0.8.24, deployed via solc-js   │
-│                                                                        │
-│  scripts/deploy/deploy-foundry7857.mjs                                 │
-│  → solc compile → ethers ContractFactory → live Galileo deploy         │
-└────────────────────────────────────────────────────────────────────────┘
+```bash
+curl https://foundry.market/api/v1/chat/completions \
+  -H "Authorization: Bearer fnd_live_..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "foundry/1",
+    "messages": [{"role": "user", "content": "Hello!"}]
+  }'
 ```
 
-## ERC-7857 Model NFT (`contracts/Foundry7857.sol`)
+That's the whole integration. Other 0G hackathon teams can wire Foundry models into their app today by changing one line — the OpenAI SDK `baseURL`.
 
-A custom registry of fine-tuned models. Each token carries:
+---
 
-- `modelRootHash` — 0G Storage root for the trained weights
-- `datasetRootHash` — 0G Storage root for the training dataset (provenance)
-- `baseModel`, `category` — discoverability metadata
-- `licensePriceWei` — owner-controlled, payable in OG
-- `Transfer` / `LicenseIssued` events for indexers
+## What's actually on-chain
 
-> The contract is a **prototype registry**, not a fully ERC-721-compliant implementation — by design, since per-model licensing semantics differ from collectible-NFT semantics.
+Every successful gateway response includes verifiable headers:
 
-## Run Locally
+| Header | What it is |
+|---|---|
+| `x-foundry-model` | `foundry/<id>` of the model that served the call |
+| `x-foundry-creator` | Wallet earning royalties for this call |
+| `x-foundry-receipt-tx` | **Real** tx hash mined on 0G Galileo for this inference |
+| `x-foundry-receipt-url` | `https://chainscan-galileo.0g.ai/tx/<hash>` — clickable |
+| `x-foundry-da-anchor` | DA reference for the response payload |
+| `x-foundry-onchain-receipt` | `true` when the receipt is anchored on-chain |
 
-Prereqs: Node 20+, pnpm 10, Postgres 16. The repo is a pnpm monorepo.
+Returns **HTTP 402** if the caller's wallet doesn't hold an active license NFT for the requested model.
+
+---
+
+## What's real (no smoke-and-mirrors)
+
+| Component | Real on testnet |
+|---|---|
+| Model NFT minting (ERC-7857) | ✅ via `Foundry7857` contract |
+| Dataset / model file upload | ✅ via `@0glabs/0g-ts-sdk` Indexer to 0G Storage |
+| License purchase payment | ✅ on-chain payment verified via JSON-RPC (sender + amount) |
+| EIP-712 signatures | ✅ enforced for license, inference, and API key operations |
+| Gateway LLM response | ✅ Llama-3.1-8B via OpenRouter (or 0G Compute when configured) |
+| Per-call inference receipt | ✅ real tx mined on Galileo carrying the response digest in calldata |
+
+---
+
+## Quick start (curl, 60 seconds)
+
+```bash
+# 1. List available models on Foundry
+curl https://YOUR_DEPLOYED_URL/api/v1/models
+
+# 2. Make an inference call (you need an API key + an active license)
+curl https://YOUR_DEPLOYED_URL/api/v1/chat/completions \
+  -H "Authorization: Bearer fnd_live_YOUR_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "foundry/1",
+    "messages": [{"role": "user", "content": "Explain 0G in one sentence."}]
+  }'
+
+# 3. Click the x-foundry-receipt-url header in the response
+#    → opens chainscan-galileo.0g.ai showing the real anchor tx
+```
+
+### Drop-in OpenAI SDK
+
+```ts
+import OpenAI from "openai";
+
+const client = new OpenAI({
+  baseURL: "https://YOUR_DEPLOYED_URL/api/v1",
+  apiKey: "fnd_live_...",
+});
+
+const res = await client.chat.completions.create({
+  model: "foundry/1",
+  messages: [{ role: "user", content: "Hello!" }],
+});
+```
+
+---
+
+## Run it locally
+
+### Prerequisites
+
+- Node 22+
+- pnpm 10+
+- A PostgreSQL database (Replit auto-provisions one)
+- An EVM wallet with a small amount of AOGI on Galileo for gas — get some at the [0G faucet](https://faucet.0g.ai)
+
+### Setup
 
 ```bash
 # 1. Install
 pnpm install
 
-# 2. Database (local Postgres reachable via DATABASE_URL)
+# 2. Configure secrets (already set if you're on Replit)
+export DATABASE_URL=postgres://...
+export OG_PRIVATE_KEY=0x...                          # funded Galileo wallet
+export FOUNDRY_CONTRACT_ADDRESS=0xA0448Cd63f746a60447cfF1817ec9781C25F7b25
+export AI_INTEGRATIONS_OPENROUTER_BASE_URL=...       # real LLM responses
+export AI_INTEGRATIONS_OPENROUTER_API_KEY=...
+
+# Optional — route through 0G Compute TEE instead of OpenRouter
+# export OG_COMPUTE_PROVIDER=0x...
+# export OG_COMPUTE_BROKER_URL=https://...
+
+# 3. Push the schema
 pnpm --filter @workspace/db run push
 
-# 3. Required env vars (paste into Replit Secrets or a .env)
-OG_PRIVATE_KEY=0x…          # any funded wallet on Galileo testnet
-FOUNDRY_CONTRACT_ADDRESS=0xA0448Cd63f746a60447cfF1817ec9781C25F7b25
-DATABASE_URL=postgres://…
-
-# 4. Optional — flip from simulated to fully-live for compute/fine-tune
-OG_COMPUTE_BROKER_URL=https://<broker>/v1
-OG_COMPUTE_PROVIDER=0x<provider-address-from-broker.inference.listService()>
-
-# 5. Run (each on its own port via $PORT)
-pnpm --filter @workspace/api-server run dev
-pnpm --filter @workspace/foundry   run dev
+# 4. Boot every artifact
+pnpm dev
 ```
 
-### Test the Live Flow
-
-1. Get free testnet OG at <https://faucet.0g.ai> (≈30 s).
-2. Open the web UI → connect MetaMask → MetaMask auto-switches to 0G-Galileo-Testnet (16602).
-3. **Studio** → submit a small JSONL fine-tune.
-4. Watch Studio show a real `storagescan-galileo.0g.ai/file/<rootHash>` link.
-5. When training "completes" the model is minted via the live `Foundry7857` contract — check the tx on chainscan.
-6. **Marketplace** → list the model → buy a license → MetaMask pops up for a real on-chain payment + EIP-712 signature.
-7. **Model detail page** → run an inference → a TEE attestation hash appears as a verifiable "Proof: ↗" link.
-
-### Deploying Your Own Contract
-
-```bash
-# After OG_PRIVATE_KEY is set and the wallet is funded:
-node scripts/deploy/deploy-foundry7857.mjs
-# Compiles Foundry7857.sol, deploys, prints the new address.
-```
-
-## Repository Layout
-
-```
-contracts/
-  Foundry7857.sol            # ERC-7857-style model registry
-  Foundry7857.abi.json       # generated by deploy script
-artifacts/
-  foundry/                   # React + Vite web app
-  api-server/                # Express + Drizzle backend
-  mockup-sandbox/            # Reusable component sandbox
-lib/
-  db/                        # Drizzle schema, migrations
-  api-spec/                  # OpenAPI source of truth + Orval codegen
-scripts/
-  deploy/deploy-foundry7857.mjs   # solc + ethers one-shot deployer
-SUBMISSION.md                # Hackathon submission deliverables
-README.md                    # This file
-```
-
-## Hackathon Mapping
-
-| Judging Criterion | Where to look |
+| Workflow | What it serves |
 |---|---|
-| **0G Technical Integration Depth & Innovation** | `lib/og-*.ts`, `contracts/Foundry7857.sol`, `/api/og-status` — uses 4 distinct 0G primitives in production code paths. |
-| **Technical Implementation & Completeness** | Live contract + tx links above; mandatory EIP-712 on every state-changing route; Drizzle migrations; OpenAPI-typed end-to-end. |
-| **Product Value & Market Potential** | New revenue surface for AI creators currently locked out of monetization; lower take-rate than Hugging Face / Replicate; composable license NFTs. |
-| **User Experience & Demo Quality** | One-click MetaMask connect; auto network-switch; live status banner with real contract link; explorer-link buttons on every NFT, dataset, and tx. |
-| **Team Capability & Documentation** | This README + `SUBMISSION.md`; full OpenAPI spec; ABI checked into repo; reproducible local-deploy script. |
-
-## Links
-
-- **0G Galileo Explorer**: <https://chainscan-galileo.0g.ai>
-- **0G Storage Explorer**: <https://storagescan-galileo.0g.ai>
-- **0G Faucet**: <https://faucet.0g.ai>
-- **0G Docs**: <https://docs.0g.ai>
+| `artifacts/foundry: web` | Marketplace + Studio + Developers UI |
+| `artifacts/api-server: API Server` | REST API + `/api/v1/chat/completions` gateway |
+| `artifacts/pitch-deck: web` | Investor-grade pitch deck (10 slides) |
+| `artifacts/mockup-sandbox` | Component sandbox for design iteration |
 
 ---
 
-*Built in May 2026 for the 0G APAC Hackathon. MIT licensed.*
+## Repo layout
+
+```
+artifacts/
+  foundry/            # React + Vite frontend (marketplace, studio, developers)
+  api-server/         # Express API + OpenAI-compatible gateway
+  pitch-deck/         # 10-slide investor pitch (validate-slides clean)
+  mockup-sandbox/     # Component preview server
+lib/
+  db/                 # Drizzle schema + Postgres client (shared)
+  api-zod/            # Shared zod request/response schemas
+  api-spec/           # OpenAPI spec → @workspace/api-client-react codegen
+.local/skills/        # Replit Agent skills
+```
+
+Key files for reviewers:
+
+- `artifacts/api-server/src/routes/gateway.ts` — the OpenAI-compat gateway
+- `artifacts/api-server/src/lib/og-chain.ts` — real on-chain anchor + mint + payment verify
+- `artifacts/api-server/src/lib/og-storage.ts` — real 0G Storage uploads via Indexer SDK
+- `artifacts/api-server/src/routes/licenses.ts` — EIP-712 + on-chain payment verification
+- `artifacts/foundry/src/pages/developers.tsx` — wallet-signed API key management
+
+---
+
+## License
+
+MIT — built in public for the 0G APAC Hackathon, May 2026.
