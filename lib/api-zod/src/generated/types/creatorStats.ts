@@ -5,6 +5,7 @@
  * Foundry - Decentralized AI Model Fine-Tuning Marketplace API
  * OpenAPI spec version: 0.1.0
  */
+import type { CreatorStatsWeeklyRevenueItem } from "./creatorStatsWeeklyRevenueItem";
 import type { FineTuneJob } from "./fineTuneJob";
 import type { Model } from "./model";
 
@@ -15,6 +16,8 @@ export interface CreatorStats {
   totalLicenses: number;
   totalInferenceCalls: number;
   estimatedEarningsUsd: number;
+  /** Last 7 days of license-derived revenue in USD, oldest first. */
+  weeklyRevenue: CreatorStatsWeeklyRevenueItem[];
   jobs: FineTuneJob[];
   models: Model[];
 }

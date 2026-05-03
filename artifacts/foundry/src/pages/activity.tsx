@@ -101,7 +101,7 @@ export default function Activity() {
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2">
-                    <p className="text-sm leading-snug">{getEventText(event)}</p>
+                    <p className="text-sm leading-snug">{getEventText({ ...event, modelName: event.modelName ?? undefined })}</p>
                     <span className="text-xs text-muted-foreground font-mono shrink-0 pt-0.5">
                       {timeAgo(event.createdAt)}
                     </span>

@@ -165,12 +165,20 @@ export interface PurchaseLicenseBody {
   modelId: number;
   buyerWallet: string;
   durationDays: number;
+  /** Required EIP-712 signature over the purchase intent. The server verifies it recovers to buyerWallet and stores the wallet-signed proof on the license. */
+  signature: string;
+  /** Unix-ms timestamp the buyer signed at. */
+  signedAt: number;
 }
 
 export interface InferModelBody {
   prompt: string;
   callerWallet: string;
   systemPrompt?: string;
+  /** Required EIP-712 signature proving the caller controls callerWallet. */
+  signature: string;
+  /** Unix-ms timestamp the caller signed at. */
+  signedAt: number;
 }
 
 export interface InferModelResponse {
@@ -220,6 +228,11 @@ export interface PlatformStats {
   featuredModels: Model[];
 }
 
+export type CreatorStatsWeeklyRevenueItem = {
+  day: string;
+  revenueUsd: number;
+};
+
 export interface CreatorStats {
   totalJobs: number;
   completedJobs: number;
@@ -227,6 +240,8 @@ export interface CreatorStats {
   totalLicenses: number;
   totalInferenceCalls: number;
   estimatedEarningsUsd: number;
+  /** Last 7 days of license-derived revenue in USD, oldest first. */
+  weeklyRevenue: CreatorStatsWeeklyRevenueItem[];
   jobs: FineTuneJob[];
   models: Model[];
 }

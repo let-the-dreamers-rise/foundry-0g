@@ -267,6 +267,12 @@ export const InferModelBody = zod.object({
   prompt: zod.string(),
   callerWallet: zod.string(),
   systemPrompt: zod.string().optional(),
+  signature: zod
+    .string()
+    .describe(
+      "Required EIP-712 signature proving the caller controls callerWallet.",
+    ),
+  signedAt: zod.number().describe("Unix-ms timestamp the caller signed at."),
 });
 
 export const InferModelResponse = zod.object({
@@ -325,6 +331,12 @@ export const PurchaseLicenseBody = zod.object({
   modelId: zod.number(),
   buyerWallet: zod.string(),
   durationDays: zod.number(),
+  signature: zod
+    .string()
+    .describe(
+      "Required EIP-712 signature over the purchase intent. The server verifies it recovers to buyerWallet and stores the wallet-signed proof on the license.",
+    ),
+  signedAt: zod.number().describe("Unix-ms timestamp the buyer signed at."),
 });
 
 /**
@@ -401,6 +413,14 @@ export const GetCreatorStatsResponse = zod.object({
   totalLicenses: zod.number(),
   totalInferenceCalls: zod.number(),
   estimatedEarningsUsd: zod.number(),
+  weeklyRevenue: zod
+    .array(
+      zod.object({
+        day: zod.string(),
+        revenueUsd: zod.number(),
+      }),
+    )
+    .describe("Last 7 days of license-derived revenue in USD, oldest first."),
   jobs: zod.array(
     zod.object({
       id: zod.number(),

@@ -589,10 +589,18 @@ components:
           type: string
         durationDays:
           type: integer
+        signature:
+          type: string
+          description: Required EIP-712 signature over the purchase intent. The server verifies it recovers to buyerWallet and stores the wallet-signed proof on the license.
+        signedAt:
+          type: integer
+          description: Unix-ms timestamp the buyer signed at.
       required:
         - modelId
         - buyerWallet
         - durationDays
+        - signature
+        - signedAt
 
     InferModelBody:
       type: object
@@ -603,9 +611,17 @@ components:
           type: string
         systemPrompt:
           type: string
+        signature:
+          type: string
+          description: Required EIP-712 signature proving the caller controls callerWallet.
+        signedAt:
+          type: integer
+          description: Unix-ms timestamp the caller signed at.
       required:
         - prompt
         - callerWallet
+        - signature
+        - signedAt
 
     InferModelResponse:
       type: object
@@ -695,6 +711,19 @@ components:
           type: integer
         estimatedEarningsUsd:
           type: number
+        weeklyRevenue:
+          type: array
+          description: Last 7 days of license-derived revenue in USD, oldest first.
+          items:
+            type: object
+            properties:
+              day:
+                type: string
+              revenueUsd:
+                type: number
+            required:
+              - day
+              - revenueUsd
         jobs:
           type: array
           items:
@@ -710,5 +739,6 @@ components:
         - totalLicenses
         - totalInferenceCalls
         - estimatedEarningsUsd
+        - weeklyRevenue
         - jobs
         - models

@@ -17,16 +17,6 @@ import {
 import { useState } from "react";
 import { Link } from "wouter";
 
-const EARNINGS_DATA = [
-  { day: "Mon", value: 18 },
-  { day: "Tue", value: 32 },
-  { day: "Wed", value: 27 },
-  { day: "Thu", value: 45 },
-  { day: "Fri", value: 38 },
-  { day: "Sat", value: 52 },
-  { day: "Sun", value: 41 },
-];
-
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
   const handleCopy = async () => {
@@ -151,32 +141,47 @@ export default function Dashboard() {
             <p className="text-xs text-muted-foreground">USD earnings from licenses</p>
           </CardHeader>
           <CardContent>
-            <div className="mb-2">
-              <span className="text-2xl font-bold font-mono gradient-text">
-                ${EARNINGS_DATA.reduce((a, b) => a + b.value, 0)}
-              </span>
-              <span className="text-xs text-muted-foreground ml-2">this week</span>
-            </div>
-            <ResponsiveContainer width="100%" height={120}>
-              <BarChart data={EARNINGS_DATA} margin={{ top: 4, right: 0, left: -32, bottom: 0 }}>
-                <XAxis
-                  dataKey="day"
-                  tick={{ fontSize: 10, fill: "hsl(215 18% 45%)" }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <YAxis tick={false} axisLine={false} tickLine={false} />
-                <Tooltip content={<CustomTooltip />} cursor={{ fill: "hsl(217 25% 11%)" }} />
-                <Bar dataKey="value" radius={[3, 3, 0, 0]}>
-                  {EARNINGS_DATA.map((_, index) => (
-                    <Cell
-                      key={index}
-                      fill={index === EARNINGS_DATA.length - 2 ? "hsl(154 70% 50%)" : "hsl(154 70% 50% / 0.35)"}
-                    />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+            {(() => {
+              const weekly = stats?.weeklyRevenue ?? [];
+              const total = weekly.reduce((a, b) => a + b.revenueUsd, 0);
+              const maxIdx = weekly.reduce(
+                (best, cur, idx, arr) => (cur.revenueUsd > arr[best]!.revenueUsd ? idx : best),
+                0,
+              );
+              return (
+                <>
+                  <div className="mb-2">
+                    <span className="text-2xl font-bold font-mono gradient-text">
+                      ${total.toFixed(2)}
+                    </span>
+                    <span className="text-xs text-muted-foreground ml-2">this week</span>
+                  </div>
+                  <ResponsiveContainer width="100%" height={120}>
+                    <BarChart
+                      data={weekly.map((w) => ({ day: w.day, value: w.revenueUsd }))}
+                      margin={{ top: 4, right: 0, left: -32, bottom: 0 }}
+                    >
+                      <XAxis
+                        dataKey="day"
+                        tick={{ fontSize: 10, fill: "hsl(215 18% 45%)" }}
+                        axisLine={false}
+                        tickLine={false}
+                      />
+                      <YAxis tick={false} axisLine={false} tickLine={false} />
+                      <Tooltip content={<CustomTooltip />} cursor={{ fill: "hsl(217 25% 11%)" }} />
+                      <Bar dataKey="value" radius={[3, 3, 0, 0]}>
+                        {weekly.map((_, index) => (
+                          <Cell
+                            key={index}
+                            fill={index === maxIdx ? "hsl(154 70% 50%)" : "hsl(154 70% 50% / 0.35)"}
+                          />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </>
+              );
+            })()}
           </CardContent>
         </Card>
 

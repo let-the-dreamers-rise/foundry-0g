@@ -10,4 +10,8 @@ export interface InferModelBody {
   prompt: string;
   callerWallet: string;
   systemPrompt?: string;
+  /** Required EIP-712 signature proving the caller controls callerWallet. */
+  signature: string;
+  /** Unix-ms timestamp the caller signed at. */
+  signedAt: number;
 }

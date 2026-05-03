@@ -1,13 +1,31 @@
 import { Router, type IRouter } from "express";
 import { eq, desc, and, gt } from "drizzle-orm";
+import { ethers } from "ethers";
 import { db, licensesTable, modelsTable, activityTable } from "@workspace/db";
 import {
   ListLicensesQueryParams,
   ListLicensesResponse,
   PurchaseLicenseBody,
 } from "@workspace/api-zod";
+import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
+
+// EIP-712 domain — the same constants are mirrored client-side in model-detail.tsx
+const EIP712_DOMAIN = {
+  name: "Foundry",
+  version: "1",
+  chainId: 16600, // 0G Galileo testnet
+} as const;
+
+const EIP712_TYPES: Record<string, Array<{ name: string; type: string }>> = {
+  PurchaseLicense: [
+    { name: "modelId", type: "uint256" },
+    { name: "buyer", type: "address" },
+    { name: "durationDays", type: "uint256" },
+    { name: "signedAt", type: "uint256" },
+  ],
+};
 
 function toJson<T>(data: T): T {
   return JSON.parse(JSON.stringify(data));
@@ -79,7 +97,7 @@ router.post("/licenses", async (req, res): Promise<void> => {
     return;
   }
 
-  const { modelId, buyerWallet, durationDays } = parsed.data;
+  const { modelId, buyerWallet, durationDays, signature, signedAt } = parsed.data;
 
   const [model] = await db
     .select()
@@ -88,6 +106,44 @@ router.post("/licenses", async (req, res): Promise<void> => {
 
   if (!model) {
     res.status(404).json({ error: "Model not found or not listed" });
+    return;
+  }
+
+  // ─── EIP-712 signature verification (mandatory) ─────────────────────────
+  // We refuse purchases that do not carry a wallet-signed proof of consent.
+  // The signature is verified server-side via ethers.verifyTypedData and
+  // permanently recorded alongside the license.
+  let verifiedSignature: string;
+  let verifiedSignedAt: Date;
+  try {
+    const recovered = ethers.verifyTypedData(
+      EIP712_DOMAIN,
+      EIP712_TYPES,
+      {
+        modelId: BigInt(modelId),
+        buyer: buyerWallet,
+        durationDays: BigInt(durationDays),
+        signedAt: BigInt(signedAt),
+      },
+      signature
+    );
+    if (recovered.toLowerCase() !== buyerWallet.toLowerCase()) {
+      res.status(401).json({
+        error: "Signature does not match buyerWallet",
+        recovered,
+      });
+      return;
+    }
+    if (Math.abs(Date.now() - signedAt) > 10 * 60 * 1000) {
+      res.status(401).json({ error: "Signature expired (>10 min old)" });
+      return;
+    }
+    verifiedSignature = signature;
+    verifiedSignedAt = new Date(signedAt);
+    logger.info({ buyerWallet, modelId }, "License: EIP-712 signature verified");
+  } catch (err) {
+    logger.warn({ err }, "License: signature verification failed");
+    res.status(401).json({ error: "Invalid EIP-712 signature" });
     return;
   }
 
@@ -121,6 +177,8 @@ router.post("/licenses", async (req, res): Promise<void> => {
       buyerWallet,
       ogPaymentTxHash: paymentTxHash,
       ogExplorerUrl: makeOgExplorerUrl(paymentTxHash),
+      buyerSignature: verifiedSignature,
+      signedAt: verifiedSignedAt,
       activeUntil,
     })
     .returning();
@@ -136,7 +194,11 @@ router.post("/licenses", async (req, res): Promise<void> => {
     modelName: model.name,
     actorWallet: buyerWallet,
     ogExplorerUrl: makeOgExplorerUrl(paymentTxHash),
-    metadata: JSON.stringify({ durationDays, priceUsd: model.licensePriceUsd }),
+    metadata: JSON.stringify({
+      durationDays,
+      priceUsd: model.licensePriceUsd,
+      signed: !!verifiedSignature,
+    }),
   });
 
   res.status(201).json(toJson({ ...license, model }));

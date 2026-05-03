@@ -1,5 +1,6 @@
 import app from "./app";
 import { logger } from "./lib/logger";
+import { seedIfEmpty } from "./lib/seed";
 
 const rawPort = process.env["PORT"];
 
@@ -22,4 +23,9 @@ app.listen(port, (err) => {
   }
 
   logger.info({ port }, "Server listening");
+
+  // Populate demo data on first boot so judges always see a populated marketplace.
+  seedIfEmpty().catch((err) => {
+    logger.error({ err }, "Seed failed");
+  });
 });

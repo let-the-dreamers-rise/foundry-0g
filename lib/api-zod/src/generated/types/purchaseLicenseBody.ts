@@ -10,4 +10,8 @@ export interface PurchaseLicenseBody {
   modelId: number;
   buyerWallet: string;
   durationDays: number;
+  /** Required EIP-712 signature over the purchase intent. The server verifies it recovers to buyerWallet and stores the wallet-signed proof on the license. */
+  signature: string;
+  /** Unix-ms timestamp the buyer signed at. */
+  signedAt: number;
 }

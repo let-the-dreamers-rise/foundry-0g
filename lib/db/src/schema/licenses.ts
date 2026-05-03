@@ -8,6 +8,8 @@ export const licensesTable = pgTable("licenses", {
   buyerWallet: text("buyer_wallet").notNull(),
   ogPaymentTxHash: text("og_payment_tx_hash"),
   ogExplorerUrl: text("og_explorer_url"),
+  buyerSignature: text("buyer_signature"),
+  signedAt: timestamp("signed_at", { withTimezone: true }),
   activeUntil: timestamp("active_until", { withTimezone: true }).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });

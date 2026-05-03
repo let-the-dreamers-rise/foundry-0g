@@ -1,5 +1,6 @@
 import { Router, type IRouter } from "express";
 import { eq, and, gt } from "drizzle-orm";
+import { ethers } from "ethers";
 import { db, modelsTable, licensesTable, inferenceCallsTable, activityTable } from "@workspace/db";
 import {
   InferModelParams,
@@ -7,8 +8,23 @@ import {
   InferModelResponse,
 } from "@workspace/api-zod";
 import { callOgCompute } from "../lib/og-compute";
+import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
+
+const EIP712_DOMAIN = {
+  name: "Foundry",
+  version: "1",
+  chainId: 16600,
+} as const;
+
+const EIP712_INFER_TYPES: Record<string, Array<{ name: string; type: string }>> = {
+  Inference: [
+    { name: "modelId", type: "uint256" },
+    { name: "caller", type: "address" },
+    { name: "signedAt", type: "uint256" },
+  ],
+};
 
 function randomHex(len: number): string {
   const chars = "0123456789abcdef";
@@ -74,8 +90,37 @@ router.post("/models/:id/infer", async (req, res): Promise<void> => {
     return;
   }
 
-  const { callerWallet, prompt } = parsed.data;
+  const { callerWallet, prompt, signature, signedAt } = parsed.data;
   const modelId = params.data.id;
+
+  // ─── EIP-712 wallet-ownership verification (mandatory) ───────────────────
+  // Without this, anyone could spoof callerWallet and bypass license checks
+  // by claiming to be the model creator. The signature proves the caller
+  // controls the private key behind callerWallet.
+  try {
+    const recovered = ethers.verifyTypedData(
+      EIP712_DOMAIN,
+      EIP712_INFER_TYPES,
+      {
+        modelId: BigInt(modelId),
+        caller: callerWallet,
+        signedAt: BigInt(signedAt),
+      },
+      signature
+    );
+    if (recovered.toLowerCase() !== callerWallet.toLowerCase()) {
+      res.status(401).json({ error: "Signature does not match callerWallet" });
+      return;
+    }
+    if (Math.abs(Date.now() - signedAt) > 10 * 60 * 1000) {
+      res.status(401).json({ error: "Signature expired (>10 min old)" });
+      return;
+    }
+  } catch (err) {
+    logger.warn({ err }, "Inference: EIP-712 verification failed");
+    res.status(401).json({ error: "Invalid EIP-712 signature" });
+    return;
+  }
 
   const [model] = await db
     .select()

@@ -12,6 +12,7 @@ export * from "./createFineTuneJobBody";
 export * from "./createFineTuneJobBodyBaseModel";
 export * from "./createFineTuneJobBodyCategory";
 export * from "./creatorStats";
+export * from "./creatorStatsWeeklyRevenueItem";
 export * from "./fineTuneJob";
 export * from "./fineTuneJobStatus";
 export * from "./fineTuneJobStatusProperty";

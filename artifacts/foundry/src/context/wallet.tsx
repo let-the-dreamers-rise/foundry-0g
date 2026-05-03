@@ -2,6 +2,17 @@ import { createContext, useContext, useState, useCallback, useEffect, type React
 
 const OG_CHAIN_ID = "0x40D8";
 
+function domainFields(domain: Record<string, unknown>): Array<{ name: string; type: string }> {
+  const fields: Array<{ name: string; type: string }> = [];
+  if (typeof domain.name === "string") fields.push({ name: "name", type: "string" });
+  if (typeof domain.version === "string") fields.push({ name: "version", type: "string" });
+  if (typeof domain.chainId === "number" || typeof domain.chainId === "bigint")
+    fields.push({ name: "chainId", type: "uint256" });
+  if (typeof domain.verifyingContract === "string")
+    fields.push({ name: "verifyingContract", type: "address" });
+  return fields;
+}
+
 interface EthereumProvider {
   request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
   on: (event: string, handler: (...args: unknown[]) => void) => void;
@@ -25,6 +36,12 @@ type WalletContextType = {
   connect: () => Promise<void>;
   disconnect: () => void;
   switchToOgChain: () => Promise<void>;
+  signTypedData: (
+    domain: Record<string, unknown>,
+    types: Record<string, Array<{ name: string; type: string }>>,
+    message: Record<string, unknown>,
+    primaryType: string
+  ) => Promise<string | null>;
   error: string | null;
 };
 
@@ -38,6 +55,7 @@ const WalletContext = createContext<WalletContextType>({
   connect: async () => {},
   disconnect: () => {},
   switchToOgChain: async () => {},
+  signTypedData: async () => null,
   error: null,
 });
 
@@ -115,6 +133,38 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     setError(null);
   }, []);
 
+  const signTypedData = useCallback(
+    async (
+      domain: Record<string, unknown>,
+      types: Record<string, Array<{ name: string; type: string }>>,
+      message: Record<string, unknown>,
+      primaryType: string,
+    ): Promise<string | null> => {
+      if (!window.ethereum || !address) return null;
+      const payload = {
+        domain,
+        types: { EIP712Domain: domainFields(domain), ...types },
+        primaryType,
+        message,
+      };
+      try {
+        const sig = (await window.ethereum.request({
+          method: "eth_signTypedData_v4",
+          params: [address, JSON.stringify(payload)],
+        })) as string;
+        return sig;
+      } catch (err) {
+        if ((err as { code?: number }).code !== 4001) {
+          // 4001 = user rejected, don't log as error
+          // eslint-disable-next-line no-console
+          console.warn("signTypedData failed:", err);
+        }
+        return null;
+      }
+    },
+    [address],
+  );
+
   useEffect(() => {
     if (!window.ethereum) return;
     (window.ethereum.request({ method: "eth_accounts" }) as Promise<string[]>)
@@ -158,6 +208,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         connect,
         disconnect,
         switchToOgChain,
+        signTypedData,
         error,
       }}
     >

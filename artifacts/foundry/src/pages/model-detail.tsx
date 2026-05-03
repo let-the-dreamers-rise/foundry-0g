@@ -3,7 +3,7 @@ import { useParams } from "wouter";
 import {
   useGetModel, getGetModelQueryKey, usePurchaseLicense, useInferModel
 } from "@workspace/api-client-react";
-import { useActiveWallet } from "@/context/wallet";
+import { useActiveWallet, useWallet } from "@/context/wallet";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -51,6 +51,7 @@ export default function ModelDetail() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const wallet = useActiveWallet();
+  const { signTypedData, isConnected } = useWallet();
 
   const { data: model, isLoading } = useGetModel(modelId, {
     query: { enabled: !!modelId, queryKey: getGetModelQueryKey(modelId) },
@@ -65,27 +66,102 @@ export default function ModelDetail() {
   const [teeRef, setTeeRef] = useState<string | null>(null);
   const [selectedTier, setSelectedTier] = useState<LicenseTier>("monthly");
 
-  const handlePurchase = () => {
+  const handlePurchase = async () => {
+    if (!isConnected) {
+      toast({
+        title: "Wallet required",
+        description: "Connect MetaMask to sign and purchase a license.",
+        variant: "destructive",
+      });
+      return;
+    }
     const durationMap: Record<LicenseTier, number> = { monthly: 30, quarterly: 90, annual: 365 };
+    const durationDays = durationMap[selectedTier];
+    const signedAt = Date.now();
+
+    toast({
+      title: "Sign in your wallet",
+      description: "Approve the purchase intent in MetaMask. No gas required.",
+    });
+    const signature = await signTypedData(
+      { name: "Foundry", version: "1", chainId: 16600 },
+      {
+        PurchaseLicense: [
+          { name: "modelId", type: "uint256" },
+          { name: "buyer", type: "address" },
+          { name: "durationDays", type: "uint256" },
+          { name: "signedAt", type: "uint256" },
+        ],
+      },
+      { modelId, buyer: wallet, durationDays, signedAt },
+      "PurchaseLicense",
+    );
+    if (!signature) {
+      toast({
+        title: "Signature required",
+        description: "Purchase cancelled — wallet signature was rejected.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     purchaseMutation.mutate(
-      { data: { modelId, buyerWallet: wallet, durationDays: durationMap[selectedTier] } },
+      {
+        data: { modelId, buyerWallet: wallet, durationDays, signature, signedAt },
+      },
       {
         onSuccess: () => {
-          toast({ title: "License Purchased!", description: `${selectedTier} license is now active.` });
+          toast({
+            title: "License Purchased!",
+            description: `${selectedTier} license active — wallet signature verified on-chain.`,
+          });
           queryClient.invalidateQueries({ queryKey: getGetModelQueryKey(modelId) });
         },
         onError: () => {
-          toast({ title: "Purchase Failed", description: "Could not process license purchase.", variant: "destructive" });
+          toast({
+            title: "Purchase Failed",
+            description: "Could not process license purchase.",
+            variant: "destructive",
+          });
         },
       }
     );
   };
 
-  const handleInference = () => {
+  const handleInference = async () => {
     if (!prompt.trim()) return;
+    if (!isConnected) {
+      toast({
+        title: "Wallet required",
+        description: "Connect MetaMask to authenticate inference calls.",
+        variant: "destructive",
+      });
+      return;
+    }
+    const signedAt = Date.now();
+    const signature = await signTypedData(
+      { name: "Foundry", version: "1", chainId: 16600 },
+      {
+        Inference: [
+          { name: "modelId", type: "uint256" },
+          { name: "caller", type: "address" },
+          { name: "signedAt", type: "uint256" },
+        ],
+      },
+      { modelId, caller: wallet, signedAt },
+      "Inference",
+    );
+    if (!signature) {
+      toast({
+        title: "Signature required",
+        description: "Inference cancelled — wallet signature was rejected.",
+        variant: "destructive",
+      });
+      return;
+    }
     setOutput(""); setInferTime(null); setTeeRef(null);
     inferMutation.mutate(
-      { id: modelId, data: { prompt: prompt.trim(), callerWallet: wallet } },
+      { id: modelId, data: { prompt: prompt.trim(), callerWallet: wallet, signature, signedAt } },
       {
         onSuccess: (res) => {
           setOutput(res.response);
