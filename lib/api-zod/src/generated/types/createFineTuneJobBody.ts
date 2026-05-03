@@ -20,4 +20,8 @@ export interface CreateFineTuneJobBody {
   licensePriceUsd: number;
   /** JSONL content of the training dataset */
   datasetContent: string;
+  /** Required EIP-712 signature proving the caller controls creatorWallet. */
+  signature: string;
+  /** Unix-ms timestamp the creator signed at. */
+  signedAt: number;
 }

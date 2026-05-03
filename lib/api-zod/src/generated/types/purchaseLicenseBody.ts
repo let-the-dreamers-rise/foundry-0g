@@ -14,4 +14,6 @@ export interface PurchaseLicenseBody {
   signature: string;
   /** Unix-ms timestamp the buyer signed at. */
   signedAt: number;
+  /** Optional on-chain payment tx hash. When provided, the server verifies via JsonRpcProvider that (a) the tx is mined on 0G Galileo, (b) sender == buyerWallet, (c) value >= license price. Sets paymentVerified=true on the license. */
+  paymentTxHash?: string;
 }

@@ -103,6 +103,10 @@ export interface CreateFineTuneJobBody {
   licensePriceUsd: number;
   /** JSONL content of the training dataset */
   datasetContent: string;
+  /** Required EIP-712 signature proving the caller controls creatorWallet. */
+  signature: string;
+  /** Unix-ms timestamp the creator signed at. */
+  signedAt: number;
 }
 
 export interface Model {
@@ -146,6 +150,9 @@ export interface UpdateModelBody {
 export interface ListModelBody {
   licensePriceUsd: number;
   creatorWallet: string;
+  /** Required EIP-712 signature proving the caller controls creatorWallet. */
+  signature: string;
+  signedAt: number;
 }
 
 export interface License {
@@ -169,6 +176,8 @@ export interface PurchaseLicenseBody {
   signature: string;
   /** Unix-ms timestamp the buyer signed at. */
   signedAt: number;
+  /** Optional on-chain payment tx hash. When provided, the server verifies via JsonRpcProvider that (a) the tx is mined on 0G Galileo, (b) sender == buyerWallet, (c) value >= license price. Sets paymentVerified=true on the license. */
+  paymentTxHash?: string;
 }
 
 export interface InferModelBody {

@@ -69,6 +69,12 @@ export const CreateFineTuneJobBody = zod.object({
   datasetContent: zod
     .string()
     .describe("JSONL content of the training dataset"),
+  signature: zod
+    .string()
+    .describe(
+      "Required EIP-712 signature proving the caller controls creatorWallet.",
+    ),
+  signedAt: zod.number().describe("Unix-ms timestamp the creator signed at."),
 });
 
 /**
@@ -231,6 +237,12 @@ export const ListModelParams = zod.object({
 export const ListModelBody = zod.object({
   licensePriceUsd: zod.number(),
   creatorWallet: zod.string(),
+  signature: zod
+    .string()
+    .describe(
+      "Required EIP-712 signature proving the caller controls creatorWallet.",
+    ),
+  signedAt: zod.number(),
 });
 
 export const ListModelResponse = zod.object({
@@ -337,6 +349,12 @@ export const PurchaseLicenseBody = zod.object({
       "Required EIP-712 signature over the purchase intent. The server verifies it recovers to buyerWallet and stores the wallet-signed proof on the license.",
     ),
   signedAt: zod.number().describe("Unix-ms timestamp the buyer signed at."),
+  paymentTxHash: zod
+    .string()
+    .optional()
+    .describe(
+      "Optional on-chain payment tx hash. When provided, the server verifies via JsonRpcProvider that (a) the tx is mined on 0G Galileo, (b) sender == buyerWallet, (c) value >= license price. Sets paymentVerified=true on the license.",
+    ),
 });
 
 /**

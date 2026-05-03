@@ -51,10 +51,15 @@ We're transparent about the testnet boundary. The **0G Network status banner** i
 | Component | Status |
 |---|---|
 | Wallet connect (MetaMask, EIP-1193) | **Real** — auto-switches to 0G Galileo (chainId 0x40D8) |
-| EIP-712 signed license purchases | **Real** — signature verified server-side via `ethers.verifyTypedData` |
+| EIP-712 signed fine-tune jobs | **Real** — required on `POST /fine-tune` (creator-ownership proof) |
+| EIP-712 signed model listings | **Real** — required on `POST /models/:id/list` (anti-spoof) |
+| EIP-712 signed license purchases | **Real** — required on `POST /licenses` |
+| EIP-712 signed inference calls | **Real** — required on `POST /models/:id/infer` (10-min replay window) |
 | 0G Storage uploads | **Real** when `OG_PRIVATE_KEY` is set; deterministic-hash fallback otherwise |
+| ERC-7857 NFT mint (`Foundry7857.mint`) | **Real ethers v6 call** when `FOUNDRY_CONTRACT_ADDRESS` + `OG_PRIVATE_KEY` are set; deterministic placeholder fallback (clearly logged) |
+| On-chain license payment verification | **Real** when buyer supplies `paymentTxHash` — server checks tx mined, sender, value via `JsonRpcProvider`. License row stores `paymentVerified` flag. |
 | 0G Compute inference | **Real** when `OG_COMPUTE_BROKER_URL` is set; simulated response pool fallback |
-| ERC-7857 contract | **Prototype source** at `contracts/Foundry7857.sol` — registry-style, not full ERC-721. Testnet deployment is the next step |
+| ERC-7857 contract | **Prototype source** at `contracts/Foundry7857.sol` — custom registry, not full ERC-721 |
 | Demo-mode TX hashes | **Clearly labeled** — no fake "live" links |
 
 ## Architecture

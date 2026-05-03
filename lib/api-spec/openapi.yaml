@@ -452,6 +452,12 @@ components:
         datasetContent:
           type: string
           description: JSONL content of the training dataset
+        signature:
+          type: string
+          description: Required EIP-712 signature proving the caller controls creatorWallet.
+        signedAt:
+          type: integer
+          description: Unix-ms timestamp the creator signed at.
       required:
         - creatorWallet
         - baseModel
@@ -463,6 +469,8 @@ components:
         - sampleOutput
         - licensePriceUsd
         - datasetContent
+        - signature
+        - signedAt
 
     Model:
       type: object
@@ -547,9 +555,16 @@ components:
           type: number
         creatorWallet:
           type: string
+        signature:
+          type: string
+          description: Required EIP-712 signature proving the caller controls creatorWallet.
+        signedAt:
+          type: integer
       required:
         - licensePriceUsd
         - creatorWallet
+        - signature
+        - signedAt
 
     License:
       type: object
@@ -595,6 +610,9 @@ components:
         signedAt:
           type: integer
           description: Unix-ms timestamp the buyer signed at.
+        paymentTxHash:
+          type: string
+          description: Optional on-chain payment tx hash. When provided, the server verifies via JsonRpcProvider that (a) the tx is mined on 0G Galileo, (b) sender == buyerWallet, (c) value >= license price. Sets paymentVerified=true on the license.
       required:
         - modelId
         - buyerWallet

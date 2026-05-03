@@ -1,5 +1,6 @@
 import { Router, type IRouter } from "express";
 import { eq, desc } from "drizzle-orm";
+import { ethers } from "ethers";
 import { db, fineTuneJobsTable, modelsTable, activityTable } from "@workspace/db";
 import {
   CreateFineTuneJobBody,
@@ -11,8 +12,25 @@ import {
   GetFineTuneJobStatusResponse,
 } from "@workspace/api-zod";
 import { uploadToOgStorage } from "../lib/og-storage";
+import { mintModelNft } from "../lib/og-chain";
+import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
+
+const EIP712_DOMAIN = {
+  name: "Foundry",
+  version: "1",
+  chainId: 16600,
+} as const;
+
+const EIP712_FT_TYPES: Record<string, Array<{ name: string; type: string }>> = {
+  CreateFineTune: [
+    { name: "creator", type: "address" },
+    { name: "modelName", type: "string" },
+    { name: "baseModel", type: "string" },
+    { name: "signedAt", type: "uint256" },
+  ],
+};
 
 function toJson<T>(data: T): T {
   return JSON.parse(JSON.stringify(data));
@@ -71,7 +89,38 @@ router.post("/fine-tune", async (req, res): Promise<void> => {
     sampleOutput,
     licensePriceUsd,
     datasetContent,
+    signature,
+    signedAt,
   } = parsed.data;
+
+  // ─── EIP-712 creator-ownership verification (mandatory) ──────────────────
+  // Without this, anyone could spoof creatorWallet and submit jobs on behalf
+  // of another address (and ultimately list models that aren't theirs).
+  try {
+    const recovered = ethers.verifyTypedData(
+      EIP712_DOMAIN,
+      EIP712_FT_TYPES,
+      {
+        creator: creatorWallet,
+        modelName,
+        baseModel,
+        signedAt: BigInt(signedAt),
+      },
+      signature
+    );
+    if (recovered.toLowerCase() !== creatorWallet.toLowerCase()) {
+      res.status(401).json({ error: "Signature does not match creatorWallet" });
+      return;
+    }
+    if (Math.abs(Date.now() - signedAt) > 10 * 60 * 1000) {
+      res.status(401).json({ error: "Signature expired (>10 min old)" });
+      return;
+    }
+  } catch (err) {
+    logger.warn({ err }, "Fine-tune: EIP-712 verification failed");
+    res.status(401).json({ error: "Invalid EIP-712 signature" });
+    return;
+  }
 
   const jobIdOn0g = `job_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   const [job] = await db
@@ -222,8 +271,20 @@ async function runPipeline(
 
   const modelContent = `${modelName}:${baseModel}:${datasetUpload.rootHash}:${jobIdOn0g}`;
   const modelUpload = await uploadToOgStorage(modelContent, `model-job-${jobId}`);
-  const mintTxHash = deterministicHex(modelUpload.rootHash + "nft" + jobId, 64);
-  const nftTokenId = String((Math.abs(hashCode(modelContent)) % 9000) + 1000);
+
+  // Try to mint a real Foundry7857 NFT on 0G Chain. Falls back to deterministic
+  // placeholder when FOUNDRY_CONTRACT_ADDRESS / OG_PRIVATE_KEY aren't set.
+  const mintResult = await mintModelNft({
+    to: creatorWallet,
+    modelRootHash: modelUpload.rootHash,
+    datasetRootHash: datasetUpload.rootHash,
+    baseModel,
+    category,
+    licensePriceUsd,
+  });
+
+  const mintTxHash = mintResult?.txHash ?? deterministicHex(modelUpload.rootHash + "nft" + jobId, 64);
+  const nftTokenId = mintResult?.tokenId ?? String((Math.abs(hashCode(modelContent)) % 9000) + 1000);
 
   await db.update(fineTuneJobsTable).set({
     status: "completed",

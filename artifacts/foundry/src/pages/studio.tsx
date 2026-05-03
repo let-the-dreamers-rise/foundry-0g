@@ -4,7 +4,7 @@ import {
   getListFineTuneJobsQueryKey, getListModelsQueryKey,
 } from "@workspace/api-client-react";
 import { useQuery } from "@tanstack/react-query";
-import { useActiveWallet } from "@/context/wallet";
+import { useActiveWallet, useWallet } from "@/context/wallet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -109,6 +109,7 @@ export default function Studio() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const wallet = useActiveWallet();
+  const { signTypedData, isConnected } = useWallet();
   const [step, setStep] = useState(1);
   const [listDialogOpen, setListDialogOpen] = useState(false);
   const [listingJobId, setListingJobId] = useState<number | null>(null);
@@ -149,9 +150,40 @@ export default function Studio() {
   const estimatedCost = BASE_MODEL_COSTS[watchedBase] ?? 0;
   const datasetLines = watchedDataset ? watchedDataset.trim().split("\n").filter(Boolean).length : 0;
 
-  const onSubmit = (values: FormValues) => {
+  const onSubmit = async (values: FormValues) => {
+    if (!isConnected) {
+      toast({
+        title: "Wallet Required",
+        description: "Connect your wallet to sign and submit a fine-tune job.",
+        variant: "destructive",
+      });
+      return;
+    }
+    const signedAt = Date.now();
+    const signature = await signTypedData(
+      { name: "Foundry", version: "1", chainId: 16600 },
+      {
+        CreateFineTune: [
+          { name: "creator", type: "address" },
+          { name: "modelName", type: "string" },
+          { name: "baseModel", type: "string" },
+          { name: "signedAt", type: "uint256" },
+        ],
+      },
+      {
+        creator: wallet,
+        modelName: values.modelName,
+        baseModel: values.baseModel,
+        signedAt,
+      },
+      "CreateFineTune",
+    );
+    if (!signature) {
+      toast({ title: "Signature Required", description: "Submission cancelled — wallet signature was rejected.", variant: "destructive" });
+      return;
+    }
     createMutation.mutate(
-      { data: values },
+      { data: { ...values, creatorWallet: wallet, signature, signedAt } },
       {
         onSuccess: (job) => {
           toast({ title: "Job Submitted!", description: `Fine-tune job #${job.id} queued. Uploading to 0G Storage...` });
@@ -173,15 +205,38 @@ export default function Studio() {
     setListDialogOpen(true);
   };
 
-  const confirmListing = () => {
+  const confirmListing = async () => {
     if (listingJobId == null) return;
     const model = creatorModels?.find((m) => m.jobId === listingJobId);
     if (!model) {
       toast({ title: "Model not ready", variant: "destructive" });
       return;
     }
+    if (!isConnected) {
+      toast({ title: "Wallet Required", description: "Connect your wallet to sign a listing.", variant: "destructive" });
+      return;
+    }
+    const signedAt = Date.now();
+    const priceInt = Math.round(Number(listPrice));
+    const signature = await signTypedData(
+      { name: "Foundry", version: "1", chainId: 16600 },
+      {
+        ListModel: [
+          { name: "creator", type: "address" },
+          { name: "modelId", type: "uint256" },
+          { name: "licensePriceUsd", type: "uint256" },
+          { name: "signedAt", type: "uint256" },
+        ],
+      },
+      { creator: wallet, modelId: model.id, licensePriceUsd: priceInt, signedAt },
+      "ListModel",
+    );
+    if (!signature) {
+      toast({ title: "Signature Required", description: "Listing cancelled.", variant: "destructive" });
+      return;
+    }
     listModelMutation.mutate(
-      { id: model.id, data: { licensePriceUsd: Number(listPrice), creatorWallet: wallet } },
+      { id: model.id, data: { licensePriceUsd: Number(listPrice), creatorWallet: wallet, signature, signedAt } },
       {
         onSuccess: () => {
           toast({ title: "Listed!", description: `${model.name} is now on the marketplace.` });

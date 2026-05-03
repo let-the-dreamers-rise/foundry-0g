@@ -118,6 +118,41 @@ router.post("/models/:id/list", async (req, res): Promise<void> => {
     return;
   }
 
+  // EIP-712 signature verification — proves the caller actually controls the
+  // creator wallet (not just claims to in the request body). Without this,
+  // any attacker could spoof creatorWallet:0xVictim and list a victim's model.
+  try {
+    const recovered = (await import("ethers")).ethers.verifyTypedData(
+      { name: "Foundry", version: "1", chainId: 16600 },
+      {
+        ListModel: [
+          { name: "creator", type: "address" },
+          { name: "modelId", type: "uint256" },
+          { name: "licensePriceUsd", type: "uint256" },
+          { name: "signedAt", type: "uint256" },
+        ],
+      },
+      {
+        creator: parsed.data.creatorWallet,
+        modelId: BigInt(params.data.id),
+        licensePriceUsd: BigInt(Math.round(parsed.data.licensePriceUsd)),
+        signedAt: BigInt(parsed.data.signedAt),
+      },
+      parsed.data.signature,
+    );
+    if (recovered.toLowerCase() !== parsed.data.creatorWallet.toLowerCase()) {
+      res.status(401).json({ error: "Signature does not match creatorWallet" });
+      return;
+    }
+    if (Math.abs(Date.now() - parsed.data.signedAt) > 10 * 60 * 1000) {
+      res.status(401).json({ error: "Signature expired (>10 min old)" });
+      return;
+    }
+  } catch {
+    res.status(401).json({ error: "Invalid EIP-712 signature" });
+    return;
+  }
+
   const [model] = await db
     .update(modelsTable)
     .set({ isListed: true, licensePriceUsd: parsed.data.licensePriceUsd })

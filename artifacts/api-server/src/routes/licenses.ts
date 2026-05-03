@@ -8,6 +8,7 @@ import {
   PurchaseLicenseBody,
 } from "@workspace/api-zod";
 import { logger } from "../lib/logger";
+import { verifyLicensePayment } from "../lib/og-chain";
 
 const router: IRouter = Router();
 
@@ -97,7 +98,7 @@ router.post("/licenses", async (req, res): Promise<void> => {
     return;
   }
 
-  const { modelId, buyerWallet, durationDays, signature, signedAt } = parsed.data;
+  const { modelId, buyerWallet, durationDays, signature, signedAt, paymentTxHash } = parsed.data;
 
   const [model] = await db
     .select()
@@ -164,10 +165,40 @@ router.post("/licenses", async (req, res): Promise<void> => {
     return;
   }
 
-  const paymentTxHash = deterministicHex(
-    `${buyerWallet}:${modelId}:${durationDays}:${Date.now()}`,
-    64
-  );
+  // ─── On-chain payment verification (when buyer provides paymentTxHash) ──
+  // We verify the transaction on 0G Chain via JsonRpcProvider: confirms the
+  // tx is mined, sender == buyerWallet, and value >= license price. When no
+  // paymentTxHash is provided, we issue a "demo" license clearly flagged as
+  // paymentVerified:false.
+  let paymentVerified = false;
+  let paymentAmountWei: string | null = null;
+  let finalPaymentTxHash: string;
+  if (paymentTxHash) {
+    const result = await verifyLicensePayment({
+      txHash: paymentTxHash,
+      expectedBuyer: buyerWallet,
+      minPriceUsd: model.licensePriceUsd,
+    });
+    if (!result.verified) {
+      logger.warn({ result, paymentTxHash }, "License: payment verification failed");
+      res.status(402).json({
+        error: "Payment verification failed",
+        reason: result.reason,
+      });
+      return;
+    }
+    paymentVerified = true;
+    paymentAmountWei = result.amountWei ?? null;
+    finalPaymentTxHash = paymentTxHash;
+    logger.info({ buyerWallet, modelId, paymentTxHash }, "License: payment verified on-chain");
+  } else {
+    // Demo path: deterministic stub clearly marked as unverified.
+    finalPaymentTxHash = deterministicHex(
+      `${buyerWallet}:${modelId}:${durationDays}:${Date.now()}`,
+      64
+    );
+  }
+
   const activeUntil = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000);
 
   const [license] = await db
@@ -175,10 +206,12 @@ router.post("/licenses", async (req, res): Promise<void> => {
     .values({
       modelId,
       buyerWallet,
-      ogPaymentTxHash: paymentTxHash,
-      ogExplorerUrl: makeOgExplorerUrl(paymentTxHash),
+      ogPaymentTxHash: finalPaymentTxHash,
+      ogExplorerUrl: makeOgExplorerUrl(finalPaymentTxHash),
       buyerSignature: verifiedSignature,
       signedAt: verifiedSignedAt,
+      paymentVerified,
+      paymentAmountWei,
       activeUntil,
     })
     .returning();
@@ -193,11 +226,12 @@ router.post("/licenses", async (req, res): Promise<void> => {
     modelId,
     modelName: model.name,
     actorWallet: buyerWallet,
-    ogExplorerUrl: makeOgExplorerUrl(paymentTxHash),
+    ogExplorerUrl: makeOgExplorerUrl(finalPaymentTxHash),
     metadata: JSON.stringify({
       durationDays,
       priceUsd: model.licensePriceUsd,
       signed: !!verifiedSignature,
+      paymentVerified,
     }),
   });
 

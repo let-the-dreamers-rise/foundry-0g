@@ -9,4 +9,7 @@
 export interface ListModelBody {
   licensePriceUsd: number;
   creatorWallet: string;
+  /** Required EIP-712 signature proving the caller controls creatorWallet. */
+  signature: string;
+  signedAt: number;
 }
