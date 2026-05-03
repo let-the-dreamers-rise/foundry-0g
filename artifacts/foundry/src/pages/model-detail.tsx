@@ -77,7 +77,7 @@ export default function ModelDetail() {
     });
 
     const signature = await signTypedData(
-      { name: "Foundry", version: "1", chainId: 16600 },
+      { name: "Foundry", version: "1", chainId: 16601 },
       {
         PurchaseLicense: [
           { name: "modelId", type: "uint256" },
@@ -126,7 +126,7 @@ export default function ModelDetail() {
 
     const signedAt = Date.now();
     const signature = await signTypedData(
-      { name: "Foundry", version: "1", chainId: 16600 },
+      { name: "Foundry", version: "1", chainId: 16601 },
       {
         Inference: [
           { name: "modelId", type: "uint256" },

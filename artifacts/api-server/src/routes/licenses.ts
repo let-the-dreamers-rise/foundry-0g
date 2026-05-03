@@ -16,7 +16,7 @@ const router: IRouter = Router();
 const EIP712_DOMAIN = {
   name: "Foundry",
   version: "1",
-  chainId: 16600, // 0G Galileo testnet
+  chainId: 16601, // 0G Galileo testnet
 } as const;
 
 const EIP712_TYPES: Record<string, Array<{ name: string; type: string }>> = {

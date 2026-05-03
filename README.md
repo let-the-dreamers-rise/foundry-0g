@@ -18,7 +18,7 @@ Foundry uses 0G's full stack to make AI models **first-class on-chain assets**:
 |---|---|---|
 | **0G Storage** | `@0glabs/0g-ts-sdk` Indexer.upload | Tamper-proof root hashes for datasets + model weights, verifiable on Galileo testnet |
 | **0G Compute** | OpenAI-compatible TEE broker | Verifiable inference — every API call returns a TEE attestation reference |
-| **0G Chain** | EVM (Galileo testnet, chainId 16600) | ERC-7857 model NFTs, EIP-712 license signatures recorded with each purchase |
+| **0G Chain** | EVM (Galileo testnet, chainId 16601) | ERC-7857 model NFTs, EIP-712 license signatures recorded with each purchase |
 | **ERC-7857 (custom registry prototype)** | `contracts/Foundry7857.sol` | Each fine-tuned model = 1 entry in our on-chain registry. Owner controls licensing and transfers. (Not yet a fully ERC-721-compliant implementation — prototype.) |
 
 ## The User Journey
@@ -50,7 +50,7 @@ We're transparent about the testnet boundary. The **0G Network status banner** i
 
 | Component | Status |
 |---|---|
-| Wallet connect (MetaMask, EIP-1193) | **Real** — auto-switches to 0G Galileo (chainId 0x40D8) |
+| Wallet connect (MetaMask, EIP-1193) | **Real** — auto-switches to 0G Galileo (chainId 0x40d9) |
 | EIP-712 signed fine-tune jobs | **Real** — required on `POST /fine-tune` (creator-ownership proof) |
 | EIP-712 signed model listings | **Real** — required on `POST /models/:id/list` (anti-spoof) |
 | EIP-712 signed license purchases | **Real** — required on `POST /licenses` |
