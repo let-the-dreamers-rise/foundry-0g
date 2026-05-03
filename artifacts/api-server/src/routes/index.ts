@@ -7,6 +7,7 @@ import inferenceRouter from "./inference";
 import activityRouter from "./activity";
 import statsRouter from "./stats";
 import ogStatusRouter from "./og-status";
+import apiKeysRouter from "./api-keys";
 
 const router: IRouter = Router();
 
@@ -18,5 +19,6 @@ router.use(licensesRouter);
 router.use(inferenceRouter);
 router.use(activityRouter);
 router.use(statsRouter);
+router.use(apiKeysRouter);
 
 export default router;

@@ -10,6 +10,7 @@ import ModelDetail from "@/pages/model-detail";
 import Studio from "@/pages/studio";
 import Dashboard from "@/pages/dashboard";
 import Activity from "@/pages/activity";
+import Developers from "@/pages/developers";
 import { WalletProvider } from "@/context/wallet";
 
 const queryClient = new QueryClient({
@@ -35,6 +36,7 @@ function App() {
                 <Route path="/studio" component={Studio} />
                 <Route path="/dashboard" component={Dashboard} />
                 <Route path="/activity" component={Activity} />
+                <Route path="/developers" component={Developers} />
                 <Route component={NotFound} />
               </Switch>
             </Layout>

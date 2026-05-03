@@ -2,7 +2,7 @@ import React from "react";
 import { Link, useLocation } from "wouter";
 import { LiveOnChainBanner } from "./live-onchain-banner";
 import { cn } from "@/lib/utils";
-import { Flame, LayoutDashboard, Store, Activity, Cpu, Wallet, AlertTriangle, LogOut, ChevronDown, Loader2 } from "lucide-react";
+import { Flame, LayoutDashboard, Store, Activity, Cpu, Wallet, AlertTriangle, LogOut, ChevronDown, Loader2, Code } from "lucide-react";
 import { Button } from "./ui/button";
 import { useWallet } from "@/context/wallet";
 import {
@@ -16,6 +16,7 @@ import {
 const NAV_ITEMS = [
   { href: "/marketplace", label: "Marketplace", icon: Store },
   { href: "/studio", label: "Studio", icon: Cpu },
+  { href: "/developers", label: "Developers", icon: Code },
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/activity", label: "Activity", icon: Activity },
 ];
