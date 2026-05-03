@@ -654,9 +654,21 @@ export default function Studio() {
                           0G: {truncateHash(job.jobIdOn0g)}
                         </span>
                       )}
+                      {job.datasetRootHash && (
+                        <a
+                          href={`https://storagescan-galileo.0g.ai/file/${job.datasetRootHash}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1 bg-primary/8 hover:bg-primary/15 text-primary/90 hover:text-primary px-2 py-0.5 rounded border border-primary/25 hover:border-primary/50 transition-colors"
+                          title="View dataset on 0G Storage Explorer"
+                          data-testid={`link-dataset-${job.id}`}
+                        >
+                          Dataset: {truncateHash(job.datasetRootHash)}
+                        </a>
+                      )}
                       {job.datasetOgExplorerUrl && (
                         <span className="flex items-center gap-1 bg-muted/40 px-2 py-0.5 rounded border border-border/40">
-                          Dataset: <OgLink hash={job.datasetOgExplorerUrl.split("/").pop() || ""} type="tx" />
+                          Tx: <OgLink hash={job.datasetOgExplorerUrl.split("/").pop() || ""} type="tx" />
                         </span>
                       )}
                       {job.nftOgExplorerUrl && (

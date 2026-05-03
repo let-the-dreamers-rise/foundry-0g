@@ -13,11 +13,10 @@ import { truncateHash, truncateWallet, CATEGORY_COLORS, CATEGORY_LABELS, cn } fr
 import { OgLink } from "@/components/0g-link";
 import {
   Terminal, Database, Box, Play, Lock, Unlock, Check,
-  Copy, Zap, Users, ArrowLeft, ShieldCheck, Code2
+  Copy, Zap, Users, ArrowLeft, ShieldCheck, Code2, ExternalLink
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
-import { Link } from "wouter";
 
 type LicenseTier = "monthly" | "quarterly" | "annual";
 
@@ -77,9 +76,9 @@ export default function ModelDetail() {
       description: "Approve the purchase intent in your wallet. No gas required.",
     });
 
-    const signature = await signTypedData({
-      domain: { name: "Foundry", version: "1", chainId: 16600 },
-      types: {
+    const signature = await signTypedData(
+      { name: "Foundry", version: "1", chainId: 16600 },
+      {
         PurchaseLicense: [
           { name: "modelId", type: "uint256" },
           { name: "buyer", type: "address" },
@@ -87,9 +86,9 @@ export default function ModelDetail() {
           { name: "signedAt", type: "uint256" },
         ],
       },
-      primaryType: "PurchaseLicense",
-      message: { modelId, buyer: walletAddress, durationDays, signedAt },
-    });
+      { modelId, buyer: walletAddress, durationDays, signedAt },
+      "PurchaseLicense",
+    );
 
     if (!signature) {
       toast({
@@ -126,18 +125,18 @@ export default function ModelDetail() {
     if (!isConnected) { openConnectModal(); return; }
 
     const signedAt = Date.now();
-    const signature = await signTypedData({
-      domain: { name: "Foundry", version: "1", chainId: 16600 },
-      types: {
+    const signature = await signTypedData(
+      { name: "Foundry", version: "1", chainId: 16600 },
+      {
         Inference: [
           { name: "modelId", type: "uint256" },
           { name: "caller", type: "address" },
           { name: "signedAt", type: "uint256" },
         ],
       },
-      primaryType: "Inference",
-      message: { modelId, caller: walletAddress, signedAt },
-    });
+      { modelId, caller: walletAddress, signedAt },
+      "Inference",
+    );
 
     if (!signature) {
       toast({
@@ -417,7 +416,29 @@ console.log(response.output);
                     </label>
                     <div className="flex items-center gap-2 font-mono text-xs text-foreground/70">
                       <Database className="h-3.5 w-3.5 text-primary/60" />
-                      {truncateHash(model.datasetRootHash)}
+                      <span data-testid="text-dataset-root-hash">{truncateHash(model.datasetRootHash)}</span>
+                      <button
+                        onClick={async () => {
+                          await navigator.clipboard.writeText(model.datasetRootHash!);
+                          toast({ title: "Root hash copied" });
+                        }}
+                        className="p-1 rounded hover:bg-muted/60 text-muted-foreground hover:text-foreground transition-colors"
+                        title="Copy root hash"
+                        data-testid="button-copy-dataset-hash"
+                      >
+                        <Copy className="h-3 w-3" />
+                      </button>
+                      <a
+                        href={`https://storagescan-galileo.0g.ai/file/${model.datasetRootHash}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-[10px] font-mono text-primary/80 hover:text-primary border border-primary/30 hover:border-primary/60 rounded px-1.5 py-0.5 transition-colors"
+                        title="View dataset on 0G Storage Explorer"
+                        data-testid="link-dataset-storage-explorer"
+                      >
+                        <ExternalLink className="h-2.5 w-2.5" />
+                        0G Storage
+                      </a>
                     </div>
                     <p className="text-xs text-muted-foreground mt-2">
                       Dataset is permanently stored on 0G's decentralized storage network.

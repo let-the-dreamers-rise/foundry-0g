@@ -11,7 +11,7 @@ import {
   GetFineTuneJobResponse,
   GetFineTuneJobStatusResponse,
 } from "@workspace/api-zod";
-import { uploadToOgStorage } from "../lib/og-storage";
+import { uploadToOgStorage, isOgStorageConfigured, OgStorageConfigError, OgStorageUploadError } from "../lib/og-storage";
 import { mintModelNft } from "../lib/og-chain";
 import { createFineTuneTask, pollTaskStatus, isCliEnabled } from "../lib/og-fine-tune";
 import { logger } from "../lib/logger";
@@ -165,8 +165,14 @@ router.post("/fine-tune", async (req, res): Promise<void> => {
     sampleOutput,
     licensePriceUsd,
     creatorWallet
-  ).catch((err: unknown) => {
-    req.log?.error({ err: String(err), jobId: job.id }, "Pipeline error");
+  ).catch(async (err: unknown) => {
+    const msg = err instanceof Error ? err.message : String(err);
+    req.log?.error({ err: msg, jobId: job.id }, "Pipeline error");
+    await db.update(fineTuneJobsTable).set({
+      status: "failed",
+      progressPct: 0,
+      errorMessage: msg.slice(0, 500),
+    }).where(eq(fineTuneJobsTable.id, job.id)).catch(() => {});
   });
 });
 
@@ -232,10 +238,25 @@ async function runPipeline(
   licensePriceUsd: number,
   creatorWallet: string
 ): Promise<void> {
-  await sleep(1500);
+  await sleep(500);
   await db.update(fineTuneJobsTable).set({ progressPct: 10 }).where(eq(fineTuneJobsTable.id, jobId));
 
-  const datasetUpload = await uploadToOgStorage(datasetContent, `dataset-job-${jobId}`);
+  // ─── Real 0G Storage dataset upload ────────────────────────────────────
+  // Throws OgStorageConfigError if OG_PRIVATE_KEY is missing, or
+  // OgStorageUploadError if the indexer / network fails. Both bubble up to
+  // the route's catch handler which marks the job as failed with the
+  // surfaced error message — no silent fake-hash fallback.
+  let datasetUpload: Awaited<ReturnType<typeof uploadToOgStorage>>;
+  try {
+    datasetUpload = await uploadToOgStorage(datasetContent, `dataset-job-${jobId}`);
+  } catch (err) {
+    if (err instanceof OgStorageConfigError) {
+      logger.warn({ jobId, err: err.message }, "Dataset upload skipped: 0G Storage not configured");
+    } else if (err instanceof OgStorageUploadError) {
+      logger.error({ jobId, err: err.message }, "Dataset upload failed");
+    }
+    throw err;
+  }
 
   await db.update(fineTuneJobsTable).set({
     datasetRootHash: datasetUpload.rootHash,

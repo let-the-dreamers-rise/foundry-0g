@@ -36,7 +36,6 @@ type WalletContextType = {
   isWrongChain: boolean;
   hasWallet: boolean;
   openConnectModal: () => void;
-  signTypedData: (data: unknown) => Promise<string>;
   disconnect: () => void;
   switchToOgChain: () => Promise<void>;
   signTypedData: (
@@ -56,7 +55,6 @@ const WalletContext = createContext<WalletContextType>({
   isWrongChain: false,
   hasWallet: false,
   openConnectModal: () => {},
-  signTypedData: async () => "",
   disconnect: () => {},
   switchToOgChain: async () => {},
   signTypedData: async () => null,
@@ -173,22 +171,6 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const signTypedData = useCallback(async (data: unknown) => {
-    if (!window.ethereum || !address) {
-      throw new Error("Wallet not connected");
-    }
-    try {
-      const signature = (await window.ethereum.request({
-        method: "eth_signTypedData_v4",
-        params: [address, JSON.stringify(data)],
-      })) as string;
-      return signature;
-    } catch (err) {
-      console.error("Signing failed:", err);
-      throw err;
-    }
-  }, [address]);
-
   const disconnect = useCallback(() => {
     setAddress(null);
     setChainId(null);
@@ -272,7 +254,6 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         isWrongChain,
         hasWallet,
         openConnectModal,
-        signTypedData,
         disconnect,
         switchToOgChain,
         signTypedData,
