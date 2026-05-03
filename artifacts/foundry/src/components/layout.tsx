@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { Flame, LayoutDashboard, Store, Activity, Cpu, Wallet, AlertTriangle, LogOut, ChevronDown, Loader2 } from "lucide-react";
@@ -20,7 +20,7 @@ const NAV_ITEMS = [
 ];
 
 function WalletButton() {
-  const { address, isConnected, isConnecting, isWrongChain, hasWallet, connect, disconnect, switchToOgChain, error } =
+  const { address, isConnected, isConnecting, isWrongChain, hasWallet, openConnectModal, disconnect, switchToOgChain, error } =
     useWallet();
 
   if (isConnecting) {
@@ -56,7 +56,7 @@ function WalletButton() {
             <ChevronDown className="h-3 w-3 text-muted-foreground" />
           </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-52 font-mono text-xs">
+        <DropdownMenuContent align="end" className="w-52 font-mono text-xs dark">
           <div className="px-3 py-2 text-muted-foreground text-[10px]">
             <div className="text-foreground font-semibold mb-0.5">Connected Wallet</div>
             <div className="break-all">{address}</div>
@@ -89,7 +89,7 @@ function WalletButton() {
   return (
     <div className="flex flex-col items-end gap-1">
       <button
-        onClick={connect}
+        onClick={openConnectModal}
         className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border bg-card/50 text-xs font-mono text-muted-foreground hover:border-primary/30 hover:text-foreground transition-colors cursor-pointer"
       >
         <Wallet className="h-3 w-3" />

@@ -4,7 +4,7 @@ import {
   getListFineTuneJobsQueryKey, getListModelsQueryKey,
 } from "@workspace/api-client-react";
 import { useQuery } from "@tanstack/react-query";
-import { useActiveWallet, useWallet } from "@/context/wallet";
+import { useWallet } from "@/context/wallet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -105,24 +105,44 @@ const BASE_MODEL_COSTS: Record<string, number> = {
   "Qwen3-32B": 2.40,
 };
 
+function ConnectPrompt({ onConnect }: { onConnect: () => void }) {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6">
+      <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20">
+        <Cpu className="h-8 w-8 text-primary" />
+      </div>
+      <div className="text-center space-y-2 max-w-sm">
+        <h2 className="text-xl font-bold tracking-tight">Connect Your Wallet</h2>
+        <p className="text-sm text-muted-foreground">
+          Connect your wallet to access the Fine-Tune Studio and start training custom AI models on 0G's decentralized GPU network.
+        </p>
+      </div>
+      <Button onClick={onConnect} className="font-semibold px-8">
+        Connect Wallet
+      </Button>
+    </div>
+  );
+}
+
 export default function Studio() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const wallet = useActiveWallet();
-  const { signTypedData, isConnected } = useWallet();
+  const { address, isConnected, openConnectModal, signTypedData } = useWallet();
   const [step, setStep] = useState(1);
   const [listDialogOpen, setListDialogOpen] = useState(false);
   const [listingJobId, setListingJobId] = useState<number | null>(null);
   const [listPrice, setListPrice] = useState("29");
 
+  const walletAddress = address ?? "";
+
   const { data: jobs, isLoading, refetch } = useListFineTuneJobs(
-    { creatorWallet: wallet },
-    { query: { refetchInterval: 3000, queryKey: getListFineTuneJobsQueryKey({ creatorWallet: wallet }) } }
+    { creatorWallet: walletAddress },
+    { query: { enabled: !!address, refetchInterval: 3000, queryKey: getListFineTuneJobsQueryKey({ creatorWallet: walletAddress }) } }
   );
 
   const { data: creatorModels, refetch: refetchModels } = useListModels(
-    { creatorWallet: wallet },
-    { query: { queryKey: getListModelsQueryKey({ creatorWallet: wallet }) } }
+    { creatorWallet: walletAddress },
+    { query: { enabled: !!address, queryKey: getListModelsQueryKey({ creatorWallet: walletAddress }) } }
   );
 
   const createMutation = useCreateFineTuneJob();
@@ -131,7 +151,7 @@ export default function Studio() {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      creatorWallet: wallet,
+      creatorWallet: walletAddress,
       baseModel: "Qwen2.5-0.5B-Instruct",
       modelName: "",
       description: "",
@@ -183,12 +203,12 @@ export default function Studio() {
       return;
     }
     createMutation.mutate(
-      { data: { ...values, creatorWallet: wallet, signature, signedAt } },
+      { data: { ...values, creatorWallet: walletAddress, signature, signedAt } as any },
       {
         onSuccess: (job) => {
           toast({ title: "Job Submitted!", description: `Fine-tune job #${job.id} queued. Uploading to 0G Storage...` });
-          form.reset({ ...form.formState.defaultValues as FormValues, creatorWallet: wallet });
-          queryClient.invalidateQueries({ queryKey: getListFineTuneJobsQueryKey({ creatorWallet: wallet }) });
+          form.reset({ ...form.formState.defaultValues as FormValues, creatorWallet: walletAddress });
+          queryClient.invalidateQueries({ queryKey: getListFineTuneJobsQueryKey({ creatorWallet: walletAddress }) });
           setStep(1);
         },
         onError: () => {
@@ -236,13 +256,13 @@ export default function Studio() {
       return;
     }
     listModelMutation.mutate(
-      { id: model.id, data: { licensePriceUsd: Number(listPrice), creatorWallet: wallet, signature, signedAt } },
+      { id: model.id, data: { licensePriceUsd: Number(listPrice), creatorWallet: walletAddress, signature, signedAt } as any },
       {
         onSuccess: () => {
           toast({ title: "Listed!", description: `${model.name} is now on the marketplace.` });
           setListDialogOpen(false);
           setListingJobId(null);
-          queryClient.invalidateQueries({ queryKey: getListModelsQueryKey({ creatorWallet: wallet }) });
+          queryClient.invalidateQueries({ queryKey: getListModelsQueryKey({ creatorWallet: walletAddress }) });
           refetchModels();
         },
         onError: () => {
@@ -260,6 +280,14 @@ export default function Studio() {
     const valid = await form.trigger(stepFields[step]);
     if (valid) setStep((s) => Math.min(s + 1, 3));
   };
+
+  if (!isConnected || !address) {
+    return (
+      <div className="container max-w-screen-xl mx-auto p-4 sm:p-8">
+        <ConnectPrompt onConnect={openConnectModal} />
+      </div>
+    );
+  }
 
   return (
     <div className="container max-w-screen-xl mx-auto p-4 sm:p-8 space-y-8">

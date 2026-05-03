@@ -1,5 +1,5 @@
 import { useGetCreatorStats } from "@workspace/api-client-react";
-import { useActiveWallet } from "@/context/wallet";
+import { useWallet } from "@/context/wallet";
 import { ModelCard } from "@/components/model-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -43,9 +43,40 @@ function CustomTooltip({ active, payload, label }: { active?: boolean; payload?:
   return null;
 }
 
+function ConnectPrompt({ onConnect }: { onConnect: () => void }) {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6">
+      <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20">
+        <Wallet className="h-8 w-8 text-primary" />
+      </div>
+      <div className="text-center space-y-2 max-w-sm">
+        <h2 className="text-xl font-bold tracking-tight">Connect Your Wallet</h2>
+        <p className="text-sm text-muted-foreground">
+          Connect your wallet to view your dashboard, track earnings, and manage your listed models.
+        </p>
+      </div>
+      <Button onClick={onConnect} className="font-semibold px-8">
+        Connect Wallet
+      </Button>
+    </div>
+  );
+}
+
 export default function Dashboard() {
-  const wallet = useActiveWallet();
-  const { data: stats, isLoading } = useGetCreatorStats({ creatorWallet: wallet });
+  const { address, isConnected, openConnectModal } = useWallet();
+
+  const { data: stats, isLoading } = useGetCreatorStats(
+    { creatorWallet: address ?? "" },
+    { query: { enabled: !!address } }
+  );
+
+  if (!isConnected || !address) {
+    return (
+      <div className="container max-w-screen-xl mx-auto p-4 sm:p-8">
+        <ConnectPrompt onConnect={openConnectModal} />
+      </div>
+    );
+  }
 
   const STAT_CARDS = [
     {
@@ -92,8 +123,8 @@ export default function Dashboard() {
           <div className="text-xs font-mono text-primary uppercase tracking-widest mb-2">Creator Portal</div>
           <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
           <div className="flex items-center gap-2 mt-1">
-            <span className="text-xs text-muted-foreground font-mono">{wallet}</span>
-            <CopyButton text={wallet} />
+            <span className="text-xs text-muted-foreground font-mono">{address}</span>
+            <CopyButton text={address} />
           </div>
         </div>
         <Button asChild className="font-semibold text-sm">

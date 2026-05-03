@@ -1,4 +1,12 @@
-import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
+import React, { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Wallet } from "lucide-react";
 
 const OG_CHAIN_ID = "0x40D8";
 
@@ -20,12 +28,6 @@ interface EthereumProvider {
   isMetaMask?: boolean;
 }
 
-declare global {
-  interface Window {
-    ethereum?: EthereumProvider;
-  }
-}
-
 type WalletContextType = {
   address: string | null;
   chainId: string | null;
@@ -33,7 +35,8 @@ type WalletContextType = {
   isConnecting: boolean;
   isWrongChain: boolean;
   hasWallet: boolean;
-  connect: () => Promise<void>;
+  openConnectModal: () => void;
+  signTypedData: (data: unknown) => Promise<string>;
   disconnect: () => void;
   switchToOgChain: () => Promise<void>;
   signTypedData: (
@@ -52,18 +55,30 @@ const WalletContext = createContext<WalletContextType>({
   isConnecting: false,
   isWrongChain: false,
   hasWallet: false,
-  connect: async () => {},
+  openConnectModal: () => {},
+  signTypedData: async () => "",
   disconnect: () => {},
   switchToOgChain: async () => {},
   signTypedData: async () => null,
   error: null,
 });
 
+export function useWallet() {
+  return useContext(WalletContext);
+}
+
+declare global {
+  interface Window {
+    ethereum?: EthereumProvider;
+  }
+}
+
 export function WalletProvider({ children }: { children: ReactNode }) {
   const [address, setAddress] = useState<string | null>(null);
   const [chainId, setChainId] = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
 
   const hasWallet = typeof window !== "undefined" && !!window.ethereum;
   const isConnected = !!address;
@@ -94,9 +109,9 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const connect = useCallback(async () => {
+  const connectMetaMask = useCallback(async () => {
     if (!window.ethereum) {
-      setError("No wallet detected. Please install MetaMask.");
+      window.open("https://metamask.io/download/", "_blank");
       return;
     }
     setIsConnecting(true);
@@ -108,24 +123,71 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       })) as string[];
       if (accounts.length > 0) {
         setAddress(accounts[0]!);
-        const cid = (await window.ethereum.request({
-          method: "eth_chainId",
-        })) as string;
+        const cid = (await window.ethereum.request({ method: "eth_chainId" })) as string;
         setChainId(cid);
         if (cid.toLowerCase() !== OG_CHAIN_ID.toLowerCase()) {
           await switchToOgChain();
         }
+        setModalOpen(false);
       }
     } catch (err: unknown) {
       if ((err as { code?: number }).code === 4001) {
         setError("Connection rejected.");
       } else {
         setError("Failed to connect wallet.");
+        console.error("MetaMask connection failed:", err);
       }
     } finally {
       setIsConnecting(false);
     }
   }, [switchToOgChain]);
+
+  const connectWalletConnect = useCallback(async () => {
+    setIsConnecting(true);
+    try {
+      const projectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID as string | undefined;
+      if (!projectId) {
+        alert(
+          "WalletConnect requires a project ID.\n\n" +
+          "Set VITE_WALLETCONNECT_PROJECT_ID in your environment variables.\n" +
+          "Get a free project ID at https://cloud.walletconnect.com"
+        );
+        return;
+      }
+      const { EthereumProvider } = await import("@walletconnect/ethereum-provider");
+      const provider = await EthereumProvider.init({
+        projectId,
+        chains: [1],
+        showQrModal: true,
+      });
+      await provider.connect();
+      const accounts = provider.accounts as string[];
+      if (accounts.length > 0) {
+        setAddress(accounts[0]);
+        setModalOpen(false);
+      }
+    } catch (err) {
+      console.error("WalletConnect failed:", err);
+    } finally {
+      setIsConnecting(false);
+    }
+  }, []);
+
+  const signTypedData = useCallback(async (data: unknown) => {
+    if (!window.ethereum || !address) {
+      throw new Error("Wallet not connected");
+    }
+    try {
+      const signature = (await window.ethereum.request({
+        method: "eth_signTypedData_v4",
+        params: [address, JSON.stringify(data)],
+      })) as string;
+      return signature;
+    } catch (err) {
+      console.error("Signing failed:", err);
+      throw err;
+    }
+  }, [address]);
 
   const disconnect = useCallback(() => {
     setAddress(null);
@@ -165,15 +227,19 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     [address],
   );
 
+  const openConnectModal = useCallback(() => {
+    setModalOpen(true);
+  }, []);
+
   useEffect(() => {
     if (!window.ethereum) return;
     (window.ethereum.request({ method: "eth_accounts" }) as Promise<string[]>)
       .then((accounts) => {
         if (accounts.length > 0) {
           setAddress(accounts[0]!);
-          (
-            window.ethereum!.request({ method: "eth_chainId" }) as Promise<string>
-          ).then(setChainId).catch(() => {});
+          (window.ethereum!.request({ method: "eth_chainId" }) as Promise<string>)
+            .then(setChainId)
+            .catch(() => {});
         }
       })
       .catch(() => {});
@@ -205,7 +271,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         isConnecting,
         isWrongChain,
         hasWallet,
-        connect,
+        openConnectModal,
+        signTypedData,
         disconnect,
         switchToOgChain,
         signTypedData,
@@ -213,15 +280,57 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       }}
     >
       {children}
+      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+        <DialogContent className="sm:max-w-sm dark">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <Wallet className="h-4 w-4 text-primary" />
+              Connect Wallet
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <p className="text-xs text-muted-foreground">
+              Connect your wallet to access the Studio, Dashboard, and all
+              wallet-gated features.
+            </p>
+            <Button
+              className="w-full h-12 text-sm font-semibold justify-start gap-3"
+              onClick={connectMetaMask}
+              disabled={isConnecting}
+            >
+              <img
+                src="https://raw.githubusercontent.com/MetaMask/brand-resources/master/SVG/SVG_MetaMask_Icon_Color.svg"
+                alt="MetaMask"
+                className="h-6 w-6"
+              />
+              {window.ethereum?.isMetaMask
+                ? "MetaMask"
+                : window.ethereum
+                ? "Browser Wallet"
+                : "Install MetaMask"}
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full h-12 text-sm font-semibold justify-start gap-3 border-border/60"
+              onClick={connectWalletConnect}
+              disabled={isConnecting}
+            >
+              <img
+                src="https://raw.githubusercontent.com/WalletConnect/walletconnect-assets/master/Logo/Blue%20(Default)/Logo.svg"
+                alt="WalletConnect"
+                className="h-6 w-6"
+              />
+              WalletConnect
+            </Button>
+            {error && (
+              <p className="text-xs text-destructive text-center">{error}</p>
+            )}
+            <p className="text-[10px] text-muted-foreground text-center pt-1">
+              By connecting, you agree to the terms of service.
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
     </WalletContext.Provider>
   );
 }
-
-export const useWallet = () => useContext(WalletContext);
-
-export const DEMO_WALLET = "0x71C7656EC7ab88b098defB751B7401B5f6d8976F";
-
-export const useActiveWallet = () => {
-  const { address } = useWallet();
-  return address ?? DEMO_WALLET;
-};

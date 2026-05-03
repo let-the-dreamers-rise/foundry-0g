@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { useParams } from "wouter";
+import { useParams, Link } from "wouter";
 import {
   useGetModel, getGetModelQueryKey, usePurchaseLicense, useInferModel
 } from "@workspace/api-client-react";
-import { useActiveWallet, useWallet } from "@/context/wallet";
+import { useWallet } from "@/context/wallet";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -50,8 +50,8 @@ export default function ModelDetail() {
   const modelId = Number(id);
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const wallet = useActiveWallet();
-  const { signTypedData, isConnected } = useWallet();
+  const { address, isConnected, openConnectModal, signTypedData } = useWallet();
+  const walletAddress = address ?? "";
 
   const { data: model, isLoading } = useGetModel(modelId, {
     query: { enabled: !!modelId, queryKey: getGetModelQueryKey(modelId) },
@@ -67,25 +67,19 @@ export default function ModelDetail() {
   const [selectedTier, setSelectedTier] = useState<LicenseTier>("monthly");
 
   const handlePurchase = async () => {
-    if (!isConnected) {
-      toast({
-        title: "Wallet required",
-        description: "Connect MetaMask to sign and purchase a license.",
-        variant: "destructive",
-      });
-      return;
-    }
+    if (!isConnected) { openConnectModal(); return; }
     const durationMap: Record<LicenseTier, number> = { monthly: 30, quarterly: 90, annual: 365 };
     const durationDays = durationMap[selectedTier];
     const signedAt = Date.now();
 
     toast({
       title: "Sign in your wallet",
-      description: "Approve the purchase intent in MetaMask. No gas required.",
+      description: "Approve the purchase intent in your wallet. No gas required.",
     });
-    const signature = await signTypedData(
-      { name: "Foundry", version: "1", chainId: 16600 },
-      {
+
+    const signature = await signTypedData({
+      domain: { name: "Foundry", version: "1", chainId: 16600 },
+      types: {
         PurchaseLicense: [
           { name: "modelId", type: "uint256" },
           { name: "buyer", type: "address" },
@@ -93,9 +87,10 @@ export default function ModelDetail() {
           { name: "signedAt", type: "uint256" },
         ],
       },
-      { modelId, buyer: wallet, durationDays, signedAt },
-      "PurchaseLicense",
-    );
+      primaryType: "PurchaseLicense",
+      message: { modelId, buyer: walletAddress, durationDays, signedAt },
+    });
+
     if (!signature) {
       toast({
         title: "Signature required",
@@ -106,9 +101,7 @@ export default function ModelDetail() {
     }
 
     purchaseMutation.mutate(
-      {
-        data: { modelId, buyerWallet: wallet, durationDays, signature, signedAt },
-      },
+      { data: { modelId, buyerWallet: walletAddress, durationDays, signature, signedAt } as any },
       {
         onSuccess: () => {
           toast({
@@ -130,27 +123,22 @@ export default function ModelDetail() {
 
   const handleInference = async () => {
     if (!prompt.trim()) return;
-    if (!isConnected) {
-      toast({
-        title: "Wallet required",
-        description: "Connect MetaMask to authenticate inference calls.",
-        variant: "destructive",
-      });
-      return;
-    }
+    if (!isConnected) { openConnectModal(); return; }
+
     const signedAt = Date.now();
-    const signature = await signTypedData(
-      { name: "Foundry", version: "1", chainId: 16600 },
-      {
+    const signature = await signTypedData({
+      domain: { name: "Foundry", version: "1", chainId: 16600 },
+      types: {
         Inference: [
           { name: "modelId", type: "uint256" },
           { name: "caller", type: "address" },
           { name: "signedAt", type: "uint256" },
         ],
       },
-      { modelId, caller: wallet, signedAt },
-      "Inference",
-    );
+      primaryType: "Inference",
+      message: { modelId, caller: walletAddress, signedAt },
+    });
+
     if (!signature) {
       toast({
         title: "Signature required",
@@ -159,9 +147,10 @@ export default function ModelDetail() {
       });
       return;
     }
+
     setOutput(""); setInferTime(null); setTeeRef(null);
     inferMutation.mutate(
-      { id: modelId, data: { prompt: prompt.trim(), callerWallet: wallet, signature, signedAt } },
+      { id: modelId, data: { prompt: prompt.trim(), callerWallet: walletAddress, signature, signedAt } as any },
       {
         onSuccess: (res) => {
           setOutput(res.response);
@@ -532,7 +521,7 @@ console.log(response.output);
               </Button>
 
               <p className="text-[10px] text-center text-muted-foreground font-mono">
-                Wallet: {truncateWallet(wallet)} · Galileo Testnet
+                {isConnected ? `Wallet: ${truncateWallet(walletAddress)} · Galileo Testnet` : "Connect wallet to purchase"}
               </p>
             </div>
           </div>

@@ -24,8 +24,8 @@ const queryClient = new QueryClient({
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <WalletProvider>
-        <TooltipProvider>
+      <TooltipProvider>
+        <WalletProvider>
           <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
             <Layout>
               <Switch>
@@ -40,8 +40,8 @@ function App() {
             </Layout>
           </WouterRouter>
           <Toaster />
-        </TooltipProvider>
-      </WalletProvider>
+        </WalletProvider>
+      </TooltipProvider>
     </QueryClientProvider>
   );
 }
