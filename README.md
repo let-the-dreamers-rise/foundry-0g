@@ -55,7 +55,8 @@ We're transparent about the testnet boundary. The **0G Network status banner** i
 | EIP-712 signed model listings | **Real** — required on `POST /models/:id/list` (anti-spoof) |
 | EIP-712 signed license purchases | **Real** — required on `POST /licenses` |
 | EIP-712 signed inference calls | **Real** — required on `POST /models/:id/infer` (10-min replay window) |
-| 0G Storage uploads | **Real** when `OG_PRIVATE_KEY` is set; deterministic-hash fallback otherwise |
+| 0G Storage uploads | **Real** when `OG_PRIVATE_KEY` is set (uses `OG_INDEXER_RPC` or legacy `OG_INDEXER_URL`); deterministic-hash fallback otherwise |
+| 0G Compute fine-tuning | **Real** when `OG_COMPUTE_PROVIDER` is set — shells out to `0g-compute-cli fine-tuning create-task`, then polls `task-status` every 5s and propagates progress to DB; falls back to a simulated training loop when CLI/provider aren't configured |
 | ERC-7857 NFT mint (`Foundry7857.mint`) | **Real ethers v6 call** when `FOUNDRY_CONTRACT_ADDRESS` + `OG_PRIVATE_KEY` are set; deterministic placeholder fallback (clearly logged) |
 | On-chain license payment verification | **Real** when buyer supplies `paymentTxHash` — server checks tx mined, sender, value via `JsonRpcProvider`. License row stores `paymentVerified` flag. |
 | 0G Compute inference | **Real** when `OG_COMPUTE_BROKER_URL` is set; simulated response pool fallback |

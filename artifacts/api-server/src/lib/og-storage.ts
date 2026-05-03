@@ -4,7 +4,11 @@ import pino from "pino";
 
 const log = pino({ level: "info" });
 
-const OG_INDEXER_URL = process.env.OG_INDEXER_URL ?? "https://indexer-storage-testnet-standard.0g.ai";
+// Support both OG_INDEXER_RPC (canonical 0G env name) and OG_INDEXER_URL (legacy).
+const OG_INDEXER_URL =
+  process.env.OG_INDEXER_RPC ??
+  process.env.OG_INDEXER_URL ??
+  "https://indexer-storage-testnet-standard.0g.ai";
 const OG_EVM_RPC = process.env.OG_EVM_RPC ?? "https://evmrpc-testnet.0g.ai";
 const OG_CHAIN_EXPLORER = "https://chainscan-galileo.0g.ai/tx";
 

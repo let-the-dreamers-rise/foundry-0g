@@ -13,6 +13,7 @@ import {
 } from "@workspace/api-zod";
 import { uploadToOgStorage } from "../lib/og-storage";
 import { mintModelNft } from "../lib/og-chain";
+import { createFineTuneTask, pollTaskStatus, isCliEnabled } from "../lib/og-fine-tune";
 import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
@@ -252,25 +253,77 @@ async function runPipeline(
     metadata: JSON.stringify({ datasetRootHash: datasetUpload.rootHash }),
   });
 
-  const trainingSteps: Array<{ delay: number; pct: number }> = [
-    { delay: 8000, pct: 35 },
-    { delay: 15000, pct: 50 },
-    { delay: 25000, pct: 65 },
-    { delay: 40000, pct: 80 },
-    { delay: 60000, pct: 92 },
-  ];
+  // ─── 0G Compute fine-tuning ─────────────────────────────────────────────
+  // Real path: shell out to `0g-compute-cli fine-tuning create-task` then poll
+  // `task-status` every 5s until completed/failed. Falls back to a simulated
+  // progress loop when the CLI is not configured (OG_COMPUTE_PROVIDER missing).
+  let cliModelRootHash: string | undefined;
+  const cliTask = await createFineTuneTask({
+    datasetRootHash: datasetUpload.rootHash,
+    baseModel,
+    jobLabel: jobIdOn0g,
+  });
 
-  for (const step of trainingSteps) {
-    await sleep(step.delay);
-    await db.update(fineTuneJobsTable)
-      .set({ status: "training", progressPct: step.pct })
-      .where(eq(fineTuneJobsTable.id, jobId));
+  if (cliTask) {
+    logger.info({ jobId, taskId: cliTask.taskId }, "0G CLI fine-tune task created");
+    await db.update(fineTuneJobsTable).set({
+      status: "training",
+      jobIdOn0g: cliTask.taskId,
+      progressPct: 30,
+    }).where(eq(fineTuneJobsTable.id, jobId));
+
+    const startedAt = Date.now();
+    const maxMs = 30 * 60 * 1000; // 30-min cap
+    while (Date.now() - startedAt < maxMs) {
+      await sleep(5000);
+      const status = await pollTaskStatus(cliTask.taskId);
+      if (!status) continue;
+      await db.update(fineTuneJobsTable).set({
+        status: status.status === "completed" ? "training" : status.status === "failed" ? "failed" : "training",
+        progressPct: Math.min(95, Math.max(30, status.progressPct)),
+      }).where(eq(fineTuneJobsTable.id, jobId));
+      if (status.status === "completed") {
+        cliModelRootHash = status.modelRootHash;
+        break;
+      }
+      if (status.status === "failed") {
+        await db.update(fineTuneJobsTable).set({ status: "failed", progressPct: 0 })
+          .where(eq(fineTuneJobsTable.id, jobId));
+        return;
+      }
+    }
+  } else {
+    // Simulated training loop (demo mode — no CLI configured).
+    const trainingSteps: Array<{ delay: number; pct: number }> = [
+      { delay: 8000, pct: 35 },
+      { delay: 15000, pct: 50 },
+      { delay: 25000, pct: 65 },
+      { delay: 40000, pct: 80 },
+      { delay: 60000, pct: 92 },
+    ];
+    for (const step of trainingSteps) {
+      await sleep(step.delay);
+      await db.update(fineTuneJobsTable)
+        .set({ status: "training", progressPct: step.pct })
+        .where(eq(fineTuneJobsTable.id, jobId));
+    }
+    await sleep(15000);
   }
 
-  await sleep(15000);
-
   const modelContent = `${modelName}:${baseModel}:${datasetUpload.rootHash}:${jobIdOn0g}`;
-  const modelUpload = await uploadToOgStorage(modelContent, `model-job-${jobId}`);
+  // Prefer the CLI-returned model root hash when available; otherwise upload
+  // a deterministic stub so demo runs still produce a viewable artifact.
+  const modelUpload = cliModelRootHash
+    ? {
+        rootHash: cliModelRootHash,
+        txHash: cliModelRootHash,
+        explorerUrl: `https://chainscan-galileo.0g.ai/tx/${cliModelRootHash}`,
+        real: true,
+      }
+    : await uploadToOgStorage(modelContent, `model-job-${jobId}`);
+  if (isCliEnabled() && !cliModelRootHash) {
+    logger.warn({ jobId }, "CLI was enabled but produced no modelRootHash — using stub");
+  }
 
   // Try to mint a real Foundry7857 NFT on 0G Chain. Falls back to deterministic
   // placeholder when FOUNDRY_CONTRACT_ADDRESS / OG_PRIVATE_KEY aren't set.
