@@ -20,6 +20,31 @@ import { useQueryClient } from "@tanstack/react-query";
 
 type LicenseTier = "monthly" | "quarterly" | "annual";
 
+function TeeProofLink({ teeRef }: { teeRef: string }) {
+  const isUrl = teeRef.startsWith("http");
+  const proofUrl = isUrl
+    ? teeRef
+    : `https://chainscan-galileo.0g.ai/tx/${teeRef}`;
+  const label = teeRef.startsWith("http")
+    ? teeRef.split("/").pop()?.slice(0, 14) ?? teeRef.slice(0, 14)
+    : teeRef.slice(0, 14);
+
+  return (
+    <a
+      href={proofUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      data-testid="link-tee-proof"
+      className="flex items-center gap-1 text-primary/80 hover:text-primary transition-colors"
+      title="View TEE attestation proof on 0G Chain Explorer"
+    >
+      <ShieldCheck className="h-3 w-3" />
+      Proof: {label}…
+      <ExternalLink className="h-2.5 w-2.5" />
+    </a>
+  );
+}
+
 function CodeBlock({ code }: { code: string }) {
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
@@ -350,11 +375,8 @@ console.log(response.output);
                             <Zap className="h-3 w-3" /> {inferTime}ms
                           </span>
                         )}
-                        {teeRef && (
-                          <span className="flex items-center gap-1">
-                            <ShieldCheck className="h-3 w-3 text-primary/60" />
-                            TEE: {teeRef.slice(0, 16)}...
-                          </span>
+                          {teeRef && (
+                          <TeeProofLink teeRef={teeRef} />
                         )}
                       </div>
                     </div>
