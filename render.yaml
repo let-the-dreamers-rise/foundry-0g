@@ -21,18 +21,6 @@ services:
         fromDatabase:
           name: foundry-0g-db
           property: connectionString
-      - key: OG_PRIVATE_KEY
-        sync: false
-      - key: OG_COMPUTE_PROVIDER
-        sync: false
-      - key: OG_COMPUTE_ENDPOINT
-        sync: false
-      - key: OG_COMPUTE_API_KEY
-        sync: false
-      - key: AI_INTEGRATIONS_OPENROUTER_BASE_URL
-        sync: false
-      - key: AI_INTEGRATIONS_OPENROUTER_API_KEY
-        sync: false
 
 databases:
   - name: foundry-0g-db
