@@ -9,6 +9,7 @@ const ROOT = resolve(__dirname, "../..");
 
 const CONTRACT_PATH = resolve(ROOT, "contracts/Foundry7857.sol");
 const RPC_URL = process.env.OG_EVM_RPC || "https://evmrpc-testnet.0g.ai";
+const EXPLORER_BASE = (process.env.OG_EXPLORER_BASE || "https://chainscan-galileo.0g.ai").replace(/\/$/, "");
 const PRIVATE_KEY = process.env.OG_PRIVATE_KEY;
 
 if (!PRIVATE_KEY) {
@@ -77,7 +78,7 @@ const address = await contract.getAddress();
 
 console.log("\n========================================");
 console.log("DEPLOYED:", address);
-console.log("Explorer: https://chainscan-galileo.0g.ai/address/" + address);
-console.log("Tx:       https://chainscan-galileo.0g.ai/tx/" + txHash);
+console.log("Explorer: " + EXPLORER_BASE + "/address/" + address);
+console.log("Tx:       " + EXPLORER_BASE + "/tx/" + txHash);
 console.log("========================================");
 console.log("\nNext: add this to Replit Secrets as FOUNDRY_CONTRACT_ADDRESS");

@@ -23,7 +23,7 @@ export default function Gateway() {
           </div>
 
           <div className="mt-[2vh] font-mono text-[1.05vw] leading-[1.55] text-text/90">
-            <div><span className="text-muted">$</span> curl https://foundry.market<span className="text-primary">/api/v1/chat/completions</span> \</div>
+            <div><span className="text-muted">$</span> curl https://YOUR_DEPLOYED_URL<span className="text-primary">/api/v1/chat/completions</span> \</div>
             <div className="pl-[1.5vw]">-H <span className="text-accent">"Authorization: Bearer fnd_live_…"</span> \</div>
             <div className="pl-[1.5vw]">-H <span className="text-accent">"Content-Type: application/json"</span> \</div>
             <div className="pl-[1.5vw]">-d <span className="text-accent">'{`{`}"model":"foundry/42",</span></div>
@@ -33,7 +33,7 @@ export default function Gateway() {
           <div className="mt-auto pt-[2.5vh] border-t border-text/10">
             <div className="font-mono text-[0.85vw] text-muted tracking-[0.2em] uppercase">Drop-in replacement</div>
             <div className="mt-[0.5vh] font-display text-text text-[1.5vw] font-semibold leading-tight">
-              Change one line. <span className="text-primary">baseURL → foundry.market/v1</span>
+              Change one line. <span className="text-primary">baseURL → YOUR_DEPLOYED_URL/api/v1</span>
             </div>
           </div>
         </div>

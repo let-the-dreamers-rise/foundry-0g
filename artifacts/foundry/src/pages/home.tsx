@@ -82,42 +82,47 @@ export default function Home() {
 
   return (
     <div className="flex flex-col">
-      <section className="relative hero-grid overflow-hidden py-28 px-4">
-        <div className="container max-w-screen-xl mx-auto text-center space-y-8 relative z-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-mono font-semibold border border-primary/20 animate-pulse-glow">
+      <section className="relative hero-grid w-full max-w-full overflow-hidden px-4 py-20 sm:py-28">
+        <div className="container w-full max-w-screen-xl mx-auto text-center space-y-8 relative z-10 overflow-hidden">
+          <div className="mx-auto flex w-full max-w-[18rem] sm:inline-flex sm:w-auto sm:max-w-full flex-wrap items-center justify-center gap-x-2 gap-y-1 px-3 py-1.5 rounded-2xl sm:rounded-full bg-primary/10 text-primary text-xs font-mono font-semibold border border-primary/20 animate-pulse-glow leading-relaxed">
             <Flame className="h-3.5 w-3.5" />
-            Built on 0G Network · Galileo Testnet · ERC-7857
+            <span>Built on 0G</span>
+            <span className="opacity-60">·</span>
+            <span>Galileo Testnet</span>
+            <span className="opacity-60">·</span>
+            <span>ERC-7857</span>
           </div>
 
-          <h1 className="text-5xl sm:text-7xl font-extrabold tracking-tighter leading-none">
+          <h1 className="mx-auto max-w-[22rem] sm:max-w-none text-4xl sm:text-7xl font-extrabold tracking-tight sm:tracking-tighter leading-none">
             <span className="text-foreground">Fine-tune AI.</span>
             <br />
-            <span className="gradient-text">Own it. Monetize it.</span>
+            <span className="gradient-text block sm:inline">Own it.</span>
+            <span className="gradient-text block sm:inline sm:ml-3">Monetize it.</span>
           </h1>
 
-          <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+          <p className="text-base sm:text-xl text-muted-foreground max-w-[18rem] sm:max-w-2xl mx-auto leading-relaxed">
             The permissionless marketplace where AI creators train models on 0G's decentralized
             GPU network, own them as NFTs, and earn recurring revenue through on-chain licensing.
           </p>
 
-          <p className="text-sm text-muted-foreground/60 font-mono">
+          <p className="text-sm text-muted-foreground/60 font-mono leading-relaxed max-w-[18rem] sm:max-w-none mx-auto">
             Think <span className="text-foreground/80">Hugging Face + Replicate</span> — fully on-chain.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-            <Button asChild size="lg" className="text-sm font-bold px-8 h-12 shadow-lg shadow-primary/20">
+            <Button asChild size="lg" className="w-full max-w-60 sm:w-auto text-sm font-bold px-8 h-12 shadow-lg shadow-primary/20">
               <Link href="/studio">
                 Launch Studio <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
-            <Button asChild size="lg" variant="outline" className="text-sm font-semibold px-8 h-12 border-border/60 hover:border-primary/30">
+            <Button asChild size="lg" variant="outline" className="w-full max-w-60 sm:w-auto text-sm font-semibold px-8 h-12 border-border/60 hover:border-primary/30">
               <Link href="/marketplace">
                 Explore Models <ChevronRight className="ml-1 h-4 w-4" />
               </Link>
             </Button>
           </div>
 
-          <div className="flex items-center justify-center gap-6 text-xs text-muted-foreground pt-4">
+          <div className="mx-auto flex max-w-[22rem] flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs text-muted-foreground pt-4 sm:max-w-none sm:gap-x-6">
             <span className="flex items-center gap-1.5"><ShieldCheck className="h-3.5 w-3.5 text-primary/60" /> Verifiable training</span>
             <span className="flex items-center gap-1.5"><Lock className="h-3.5 w-3.5 text-primary/60" /> NFT ownership</span>
             <span className="flex items-center gap-1.5"><Coins className="h-3.5 w-3.5 text-primary/60" /> On-chain revenue</span>

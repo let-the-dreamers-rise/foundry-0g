@@ -24,7 +24,7 @@ export default function Closing() {
       <div className="relative z-10 mt-[2vh] grid grid-cols-3 gap-[2vw] border-t border-text/15 pt-[3vh]">
         <div>
           <div className="font-mono text-[0.85vw] text-muted tracking-[0.2em] uppercase">Live App</div>
-          <div className="mt-[0.6vh] font-mono text-text text-[1.4vw]">foundry.market</div>
+          <div className="mt-[0.6vh] font-mono text-text text-[1.4vw]">YOUR_DEPLOYED_URL</div>
         </div>
         <div>
           <div className="font-mono text-[0.85vw] text-muted tracking-[0.2em] uppercase">Contract</div>

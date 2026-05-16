@@ -39,7 +39,7 @@ export default function Title() {
           </div>
           <div className="font-mono text-[0.9vw] text-muted text-right">
             <div className="text-primary">$45K Track</div>
-            <div className="mt-[0.3vh]">foundry.market</div>
+            <div className="mt-[0.3vh]">YOUR_DEPLOYED_URL</div>
           </div>
         </div>
       </div>

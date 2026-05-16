@@ -13,23 +13,35 @@
 
 **Short summary:**
 
-Foundry is a permissionless marketplace for fine-tuned AI models. Creators upload a dataset, fine-tune a base model on 0G Compute, mint the result as an ERC-7857 NFT on 0G Chain, and license inference to developers — all without intermediaries. Every dataset, every model weight, and every license payment is anchored on 0G's stack: **0G Storage** holds the datasets and weights with verifiable root hashes; **0G Compute** runs training and TEE-attested inference; **0G Chain** records ownership, license signatures (EIP-712), and royalty flows on the Galileo testnet.
+Foundry is a permissionless marketplace for fine-tuned AI models. Creators upload a dataset, mint the resulting model as an ERC-7857 NFT on 0G Chain, and license inference to developers through an OpenAI-compatible gateway. The verifiable live integration is **0G Chain** on Galileo testnet; the codebase also includes 0G Storage uploads and 0G Compute broker support when the required Replit secrets/provider credentials are configured. 0G Chain records ownership, license signatures (EIP-712), payment verification, and per-call inference receipts.
 
 It solves a real creator-economy problem: today's AI economy concentrates ~$340B of value in five companies, and independent fine-tuners — the people who build the most useful domain-specific models (legal, medical, code, support) — capture none of it. Foundry gives them on-chain ownership, programmable licensing, and a revenue stream that doesn't require trusting a centralized marketplace.
 
-**0G components used:** 0G Storage, 0G Chain (EVM), 0G Compute (TEE inference + fine-tuning CLI).
+**0G components used:** 0G Chain (EVM, live verified), 0G Storage (SDK integration), 0G Compute (broker integration with explicit fallback when credentials are absent).
 
 ---
 
 ## 2. Code Repository
 
-- **GitHub:** _<paste your public repo URL after pushing>_
+- **GitHub:** <https://github.com/let-the-dreamers-rise/foundry-0g>
 - The repo is a pnpm monorepo. All hackathon work is in this single repository.
 - Commit history shows the full build journey from scaffold → real-on-chain integration.
 
 ---
 
 ## 3. 0G Integration Proof ✅ MANDATORY
+
+### Paste-ready HackQuest answer
+
+**0G contract address:** `0xA0448Cd63f746a60447cfF1817ec9781C25F7b25`
+
+**0G Explorer link:** <https://chainscan-galileo.0g.ai/address/0xA0448Cd63f746a60447cfF1817ec9781C25F7b25>
+
+**Deployment transaction:** <https://chainscan-galileo.0g.ai/tx/0x20c256812bf56029ca3898d16c54a840eae9e99a53b01f4ec24041ef09d66ad7>
+
+**Explanation:** Foundry uses 0G Chain as the verifiable settlement layer for AI model ownership and usage. The `Foundry7857` Solidity contract is deployed on 0G Galileo testnet and mints AI models as ERC-7857-style NFTs. The backend verifies wallet-signed EIP-712 license actions, checks on-chain payment transactions on 0G RPC, and anchors successful inference calls as 0G transactions so each response can expose a clickable `x-foundry-receipt-url` pointing to ChainScan.
+
+**Network note:** This repository currently contains verified 0G Galileo testnet proof (`chainId 16602`, `0x40da`). If the final HackQuest form strictly requires Aristotle mainnet rather than Galileo testnet, deploy `contracts/Foundry7857.sol` to mainnet first and replace the contract/explorer links above. Do not label the Galileo address as mainnet.
 
 | | |
 |---|---|

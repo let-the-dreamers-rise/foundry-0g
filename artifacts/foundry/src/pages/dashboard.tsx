@@ -1,4 +1,4 @@
-import { useGetCreatorStats } from "@workspace/api-client-react";
+import { getGetCreatorStatsQueryKey, useGetCreatorStats } from "@workspace/api-client-react";
 import { useWallet } from "@/context/wallet";
 import { ModelCard } from "@/components/model-card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -67,7 +67,12 @@ export default function Dashboard() {
 
   const { data: stats, isLoading } = useGetCreatorStats(
     { creatorWallet: address ?? "" },
-    { query: { enabled: !!address } }
+    {
+      query: {
+        enabled: !!address,
+        queryKey: getGetCreatorStatsQueryKey({ creatorWallet: address ?? "" }),
+      },
+    }
   );
 
   if (!isConnected || !address) {

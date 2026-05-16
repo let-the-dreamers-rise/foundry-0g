@@ -92,10 +92,11 @@ function WalletButton() {
     <div className="flex flex-col items-end gap-1">
       <button
         onClick={openConnectModal}
-        className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border bg-card/50 text-xs font-mono text-muted-foreground hover:border-primary/30 hover:text-foreground transition-colors cursor-pointer"
+        title={hasWallet ? "Connect Wallet" : "Install MetaMask"}
+        className="flex items-center gap-2 px-2 sm:px-3 py-1.5 rounded-lg border border-border bg-card/50 text-xs font-mono text-muted-foreground hover:border-primary/30 hover:text-foreground transition-colors cursor-pointer"
       >
         <Wallet className="h-3 w-3" />
-        {hasWallet ? "Connect Wallet" : "Install MetaMask"}
+        <span className="hidden sm:inline">{hasWallet ? "Connect Wallet" : "Install MetaMask"}</span>
       </button>
       {error && (
         <span className="text-[10px] text-destructive font-mono">{error}</span>
@@ -111,10 +112,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
     href === "/" ? location === "/" : location.startsWith(href);
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col font-sans selection:bg-primary/20 dark">
+    <div className="min-h-screen overflow-x-hidden bg-background text-foreground flex flex-col font-sans selection:bg-primary/20 dark">
       <LiveOnChainBanner />
       <header className="border-b border-border/60 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
-        <div className="container flex h-16 max-w-screen-2xl items-center px-4 gap-8">
+        <div className="container flex h-16 max-w-screen-2xl items-center px-4 gap-3 md:gap-8">
           <Link href="/" className="flex items-center gap-2.5 shrink-0 group">
             <div className="relative flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 group-hover:bg-primary/20 transition-colors">
               <Flame className="h-4 w-4 text-primary" />

@@ -49,7 +49,7 @@ If you only have 60 seconds, hit moments **1 and 3**. Everything else is bonus.
 ### [1:05 – 1:50] The kill shot — the curl
 1. Open terminal in front of judges. Already have the command pre-typed:
    ```bash
-   curl https://foundry.market/api/v1/chat/completions \
+   curl https://YOUR_DEPLOYED_URL/api/v1/chat/completions \
      -H "Authorization: Bearer fnd_live_XXX" \
      -H "Content-Type: application/json" \
      -d '{"model":"foundry/1","messages":[{"role":"user","content":"Explain 0G in one sentence."}]}'

@@ -6,7 +6,7 @@ Built for the **0G APAC Hackathon** · Live on **0G Galileo Testnet (chainId 166
 
 - **Live contract:** [`0xA0448Cd63f746a60447cfF1817ec9781C25F7b25`](https://chainscan-galileo.0g.ai/address/0xA0448Cd63f746a60447cfF1817ec9781C25F7b25)
 - **Standard:** ERC-7857 (Foundry7857 model NFT)
-- **Stack:** 0G Chain · 0G Storage · 0G Compute · 0G DA
+- **Stack:** 0G Chain (live verified) · 0G Storage SDK · 0G Compute broker support
 
 ---
 
@@ -15,7 +15,7 @@ Built for the **0G APAC Hackathon** · Live on **0G Galileo Testnet (chainId 166
 Every other AI marketplace on 0G stops at "list a model." Foundry turns every minted model into a **callable SaaS the moment it ships**:
 
 ```bash
-curl https://foundry.market/api/v1/chat/completions \
+curl https://YOUR_DEPLOYED_URL/api/v1/chat/completions \
   -H "Authorization: Bearer fnd_live_..." \
   -H "Content-Type: application/json" \
   -d '{
@@ -50,10 +50,10 @@ Returns **HTTP 402** if the caller's wallet doesn't hold an active license NFT f
 | Component | Real on testnet |
 |---|---|
 | Model NFT minting (ERC-7857) | ✅ via `Foundry7857` contract |
-| Dataset / model file upload | ✅ via `@0glabs/0g-ts-sdk` Indexer to 0G Storage |
+| Dataset / model file upload | ✅ via `@0glabs/0g-ts-sdk` Indexer when `OG_PRIVATE_KEY` is configured |
 | License purchase payment | ✅ on-chain payment verified via JSON-RPC (sender + amount) |
 | EIP-712 signatures | ✅ enforced for license, inference, and API key operations |
-| Gateway LLM response | ✅ Llama-3.1-8B via OpenRouter (or 0G Compute when configured) |
+| Gateway LLM response | ✅ OpenRouter or 0G Compute broker when configured; explicit fallback when credentials are absent |
 | Per-call inference receipt | ✅ real tx mined on Galileo carrying the response digest in calldata |
 
 ---
@@ -124,9 +124,11 @@ export AI_INTEGRATIONS_OPENROUTER_API_KEY=...
 # 3. Push the schema
 pnpm --filter @workspace/db run push
 
-# 4. Boot every artifact
+# 4. Boot API + frontend locally
 pnpm dev
 ```
+
+Local defaults: API on `http://127.0.0.1:8080`, frontend on `http://127.0.0.1:5173`, and the Vite dev server proxies `/api` to the API server.
 
 | Workflow | What it serves |
 |---|---|

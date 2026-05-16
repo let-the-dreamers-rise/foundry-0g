@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { useWallet } from "@/context/wallet";
 import { Code, Copy, Check, Trash2, KeyRound, Zap, ShieldCheck, Receipt } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { API_BASE_URL, apiUrl } from "@/lib/api-base";
 
 interface ApiKeyRow {
   id: number;
@@ -52,18 +53,21 @@ function CopyButton({ text, label = "Copy" }: { text: string; label?: string }) 
   );
 }
 
-const CURL_EXAMPLE = `curl https://foundry.market/api/v1/chat/completions \\
+function makeCurlExample(apiBaseUrl: string) {
+  return `curl ${apiBaseUrl}/api/v1/chat/completions \\
   -H "Authorization: Bearer fnd_live_..." \\
   -H "Content-Type: application/json" \\
   -d '{
     "model": "foundry/1",
     "messages": [{"role": "user", "content": "Hello!"}]
   }'`;
+}
 
-const NODE_EXAMPLE = `import OpenAI from "openai";
+function makeNodeExample(apiBaseUrl: string) {
+  return `import OpenAI from "openai";
 
 const client = new OpenAI({
-  baseURL: "https://foundry.market/api/v1",
+  baseURL: "${apiBaseUrl}/api/v1",
   apiKey: "fnd_live_...",
 });
 
@@ -71,6 +75,7 @@ const res = await client.chat.completions.create({
   model: "foundry/1",
   messages: [{ role: "user", content: "Hello" }],
 });`;
+}
 
 export default function Developers() {
   const { address, isConnected, openConnectModal, signTypedData } = useWallet();
@@ -80,6 +85,9 @@ export default function Developers() {
   const [revealedKey, setRevealedKey] = useState<NewKeyResponse | null>(null);
 
   const wallet = address ?? null;
+  const apiBaseUrl = API_BASE_URL || (typeof window !== "undefined" ? window.location.origin : "https://YOUR_DEPLOYED_URL");
+  const curlExample = makeCurlExample(apiBaseUrl);
+  const nodeExample = makeNodeExample(apiBaseUrl);
 
   async function signAction(action: "create" | "list" | "delete", target: string) {
     if (!wallet) throw new Error("Wallet not connected");
@@ -104,7 +112,7 @@ export default function Developers() {
         signature,
         signedAt: String(signedAt),
       });
-      const r = await fetch(`/api/api-keys?${params}`);
+      const r = await fetch(apiUrl(`/api/api-keys?${params}`));
       if (!r.ok) throw new Error("Failed to load keys");
       return r.json();
     },
@@ -114,7 +122,7 @@ export default function Developers() {
     mutationFn: async (name: string): Promise<NewKeyResponse> => {
       const finalName = name || "Default";
       const { signature, signedAt } = await signAction("create", finalName);
-      const r = await fetch("/api/api-keys", {
+      const r = await fetch(apiUrl("/api/api-keys"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ wallet, name: finalName, signature, signedAt }),
@@ -141,7 +149,7 @@ export default function Developers() {
         signature,
         signedAt: String(signedAt),
       });
-      const r = await fetch(`/api/api-keys/${id}?${params}`, { method: "DELETE" });
+      const r = await fetch(apiUrl(`/api/api-keys/${id}?${params}`), { method: "DELETE" });
       if (!r.ok) throw new Error("Failed to delete key");
     },
     onSuccess: () => {
@@ -324,12 +332,12 @@ export default function Developers() {
               <span className="flex items-center gap-2">
                 <Code className="h-4 w-4 text-primary" /> curl
               </span>
-              <CopyButton text={CURL_EXAMPLE} />
+              <CopyButton text={curlExample} />
             </CardTitle>
           </CardHeader>
           <CardContent>
             <pre className="text-xs font-mono bg-background border border-border/60 rounded p-3 overflow-x-auto leading-relaxed">
-              {CURL_EXAMPLE}
+              {curlExample}
             </pre>
           </CardContent>
         </Card>
@@ -340,12 +348,12 @@ export default function Developers() {
               <span className="flex items-center gap-2">
                 <Code className="h-4 w-4 text-primary" /> Node / OpenAI SDK
               </span>
-              <CopyButton text={NODE_EXAMPLE} />
+              <CopyButton text={nodeExample} />
             </CardTitle>
           </CardHeader>
           <CardContent>
             <pre className="text-xs font-mono bg-background border border-border/60 rounded p-3 overflow-x-auto leading-relaxed">
-              {NODE_EXAMPLE}
+              {nodeExample}
             </pre>
           </CardContent>
         </Card>

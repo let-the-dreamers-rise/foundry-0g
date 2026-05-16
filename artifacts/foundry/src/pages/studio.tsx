@@ -25,6 +25,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { apiUrl } from "@/lib/api-base";
 
 type OgStatus = {
   ogStorageConfigured: boolean;
@@ -35,10 +36,9 @@ type OgStatus = {
 };
 
 function OgStatusBanner() {
-  const base = import.meta.env.BASE_URL.replace(/\/$/, "");
   const { data } = useQuery<OgStatus>({
     queryKey: ["og-status"],
-    queryFn: () => fetch(`${base}/api/og-status`).then((r) => r.json()),
+    queryFn: () => fetch(apiUrl("/api/og-status")).then((r) => r.json()),
     staleTime: 30_000,
   });
 
@@ -171,7 +171,7 @@ export default function Studio() {
   const datasetLines = watchedDataset ? watchedDataset.trim().split("\n").filter(Boolean).length : 0;
 
   const onSubmit = async (values: FormValues) => {
-    if (!isConnected) {
+    if (!isConnected || !walletAddress) {
       toast({
         title: "Wallet Required",
         description: "Connect your wallet to sign and submit a fine-tune job.",
@@ -191,7 +191,7 @@ export default function Studio() {
         ],
       },
       {
-        creator: wallet,
+        creator: walletAddress,
         modelName: values.modelName,
         baseModel: values.baseModel,
         signedAt,
@@ -232,7 +232,7 @@ export default function Studio() {
       toast({ title: "Model not ready", variant: "destructive" });
       return;
     }
-    if (!isConnected) {
+    if (!isConnected || !walletAddress) {
       toast({ title: "Wallet Required", description: "Connect your wallet to sign a listing.", variant: "destructive" });
       return;
     }
@@ -248,7 +248,7 @@ export default function Studio() {
           { name: "signedAt", type: "uint256" },
         ],
       },
-      { creator: wallet, modelId: model.id, licensePriceUsd: priceInt, signedAt },
+      { creator: walletAddress, modelId: model.id, licensePriceUsd: priceInt, signedAt },
       "ListModel",
     );
     if (!signature) {

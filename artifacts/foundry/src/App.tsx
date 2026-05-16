@@ -12,6 +12,10 @@ import Dashboard from "@/pages/dashboard";
 import Activity from "@/pages/activity";
 import Developers from "@/pages/developers";
 import { WalletProvider } from "@/context/wallet";
+import { setBaseUrl } from "@workspace/api-client-react";
+import { API_BASE_URL } from "@/lib/api-base";
+
+setBaseUrl(API_BASE_URL || null);
 
 const queryClient = new QueryClient({
   defaultOptions: {
